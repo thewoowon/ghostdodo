@@ -1,0 +1,30 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gd-space-2);
+  padding: var(--gd-space-8) var(--gd-space-5);
+  text-align: center;
+  border: 1px dashed var(--gd-rule-strong);
+  border-radius: var(--gd-radius-lg);
+}
+
+.mark {
+  color: var(--gd-ink-faint);
+}
+
+.title {
+  font-size: var(--gd-text-xl);
+}
+
+.body {
+  color: var(--gd-ink-muted);
+  font-size: var(--gd-text-sm);
+}
+
+.link {
+  margin-top: var(--gd-space-2);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-accent);
+}

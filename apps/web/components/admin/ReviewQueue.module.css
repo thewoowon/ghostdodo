@@ -1,0 +1,198 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  padding: var(--gd-space-5);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gd-space-3);
+  padding-bottom: var(--gd-space-3);
+  border-bottom: 1px solid var(--gd-rule);
+}
+
+.stage {
+  padding: 2px var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  font-weight: 700;
+  color: var(--gd-accent);
+  background: var(--gd-accent-soft);
+  border-radius: var(--gd-radius-pill);
+}
+
+.meta {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.status {
+  margin-inline-start: auto;
+  font-size: var(--gd-text-xs);
+  font-weight: 600;
+  color: var(--gd-ink-muted);
+}
+
+.flags {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-2);
+  margin-top: var(--gd-space-3);
+  padding: var(--gd-space-2) var(--gd-space-3);
+  background: var(--gd-watch-soft);
+  border-radius: var(--gd-radius-sm);
+}
+
+.flagMark {
+  color: var(--gd-watch);
+  flex: none;
+}
+
+.flagList {
+  font-size: var(--gd-text-xs);
+  font-weight: 600;
+  color: var(--gd-watch);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--gd-space-3);
+  margin: var(--gd-space-4) 0 0;
+}
+
+.facts dt {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.facts dd {
+  margin: 2px 0 0;
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+}
+
+.context {
+  margin-top: var(--gd-space-3);
+  padding: var(--gd-space-3);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+  background: var(--gd-paper-sunken);
+  border-radius: var(--gd-radius-sm);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gd-space-2);
+  margin-top: var(--gd-space-4);
+  padding-top: var(--gd-space-4);
+  border-top: 1px solid var(--gd-rule);
+}
+
+.action,
+.dangerAction,
+.cancelButton,
+.dangerButton {
+  padding: var(--gd-space-2) var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  border-radius: var(--gd-radius-pill);
+  cursor: pointer;
+  border: 1px solid var(--gd-rule-strong);
+  background: var(--gd-paper);
+  color: var(--gd-ink-muted);
+}
+
+.action:hover:not(:disabled) {
+  border-color: var(--gd-accent);
+  color: var(--gd-accent);
+}
+
+/* Destructive decisions read as destructive before they are clicked. */
+.dangerAction {
+  color: var(--gd-extinct);
+  border-color: color-mix(in srgb, var(--gd-extinct) 35%, transparent);
+}
+
+.dangerAction:hover:not(:disabled) {
+  background: var(--gd-extinct-soft);
+}
+
+.action:disabled,
+.dangerAction:disabled,
+.dangerButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.confirm {
+  margin-top: var(--gd-space-4);
+  padding: var(--gd-space-4);
+  background: var(--gd-extinct-soft);
+  border: 1px solid color-mix(in srgb, var(--gd-extinct) 30%, transparent);
+  border-radius: var(--gd-radius);
+}
+
+.confirmText {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink);
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--gd-space-2);
+  margin-top: var(--gd-space-3);
+}
+
+.dangerButton {
+  color: var(--gd-accent-ink);
+  background: var(--gd-extinct);
+  border-color: var(--gd-extinct);
+}
+
+.error {
+  margin-bottom: var(--gd-space-4);
+  padding: var(--gd-space-3) var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-extinct);
+  background: var(--gd-extinct-soft);
+  border-radius: var(--gd-radius);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gd-space-2);
+  padding: var(--gd-space-8) var(--gd-space-5);
+  text-align: center;
+  border: 1px dashed var(--gd-rule-strong);
+  border-radius: var(--gd-radius-lg);
+}
+
+.emptyMark {
+  color: var(--gd-alive);
+}
+
+.emptyTitle {
+  font-weight: 600;
+}
+
+.emptyBody {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-faint);
+}
