@@ -1,0 +1,36 @@
+# deps
+node_modules/
+.pnpm-store/
+.venv/
+__pycache__/
+*.py[cod]
+
+# build
+.next/
+out/
+dist/
+build/
+*.egg-info/
+
+# env
+.env
+.env.*
+!.env.example
+
+# test / coverage
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# os / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# local data
+infra/data/

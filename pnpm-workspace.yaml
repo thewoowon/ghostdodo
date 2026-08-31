@@ -1,0 +1,9 @@
+packages:
+  - "apps/web"
+  - "packages/*"
+
+# esbuild (vitest) and unrs-resolver (eslint) fetch a platform-native binary in
+# a postinstall script; without this pnpm skips it and they fail at runtime.
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true

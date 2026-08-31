@@ -1,0 +1,25 @@
+{
+  "name": "ghostdodo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GhostDodo — 지원하기 전에, 답은 해주는 회사인지 확인하세요.",
+  "scripts": {
+    "dev": "pnpm --filter @ghostdodo/web dev",
+    "build": "pnpm --filter @ghostdodo/web build",
+    "lint": "pnpm --filter @ghostdodo/web lint",
+    "typecheck": "pnpm --filter @ghostdodo/web typecheck",
+    "test": "pnpm --filter @ghostdodo/web test",
+    "services:up": "docker compose -f infra/docker-compose.yml up -d",
+    "services:down": "docker compose -f infra/docker-compose.yml down",
+    "services:reset": "docker compose -f infra/docker-compose.yml down -v && pnpm services:up",
+    "api:dev": "cd apps/api && uv run uvicorn app.main:app --reload --port 8000",
+    "api:migrate": "cd apps/api && uv run alembic upgrade head",
+    "api:seed": "cd apps/api && uv run python -m app.scripts.seed",
+    "api:test": "cd apps/api && uv run pytest",
+    "api:lint": "cd apps/api && uv run ruff check app tests && uv run mypy app"
+  },
+  "packageManager": "pnpm@11.8.0",
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
