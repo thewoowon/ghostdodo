@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: web (typecheck, lint, test, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+
+  api:
+    name: api (ruff, mypy, pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+
+    # The API's tests are integration tests: they exercise the real
+    # verification -> metrics -> reputation transaction against Postgres.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ghostdodo
+          POSTGRES_PASSWORD: ghostdodo
+          POSTGRES_DB: ghostdodo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ghostdodo"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: ghostdodo
+          MINIO_ROOT_PASSWORD: ghostdodo_dev_secret
+          MINIO_DEFAULT_BUCKETS: ghostdodo-evidence-dev
+        ports: ["9000:9000"]
+
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql+asyncpg://ghostdodo:ghostdodo@localhost:5432/ghostdodo
+      REDIS_URL: redis://localhost:6379/0
+      AUTH_SECRET: ci_only_secret_not_used_in_any_deployment_000000
+      S3_ENDPOINT: http://localhost:9000
+      S3_BUCKET: ghostdodo-evidence-dev
+      S3_ACCESS_KEY: ghostdodo
+      S3_SECRET_KEY: ghostdodo_dev_secret
+      EMAIL_PROVIDER: console
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check app tests
+      - run: uv run ruff format --check app tests
+      - run: uv run mypy app
+
+      # Migration sanity: a clean database must reach head, and the models
+      # must not have drifted away from the migrations.
+      - run: uv run alembic upgrade head
+      - name: Check for un-migrated model changes
+        run: |
+          uv run alembic revision --autogenerate -m drift_probe -q
+          if grep -qE '^\s+op\.' app/db/migrations/versions/*drift_probe.py; then
+            echo "::error::Models have drifted from migrations. Generate a migration."
+            cat app/db/migrations/versions/*drift_probe.py
+            exit 1
+          fi
+          rm app/db/migrations/versions/*drift_probe.py
+
+      - run: uv run pytest
