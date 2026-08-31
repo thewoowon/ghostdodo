@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, Integer, String, Text, func
+from sqlalchemy import DateTime, Index, Integer, String, Text, func, text
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -44,6 +44,18 @@ class Company(UUIDPrimaryKey, Timestamped, Base):
     # observations about a real employer (docs/10 seed data rule).
     is_demo: Mapped[bool] = mapped_column(nullable=False, server_default="false")
 
+    # Directory provenance. Company NAMES may come from lawful public
+    # registries; response METRICS may not — they require qualified user
+    # reports. Recording where a record came from keeps that line auditable.
+    directory_source: Mapped[str | None] = mapped_column(String(20))
+    directory_ref: Mapped[str | None] = mapped_column(String(64))
+    directory_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # Aggressively normalized name used only for import dedupe, never shown.
+    # Without it the same employer imports as several companies and each one
+    # stays under the publishable sample bar forever.
+    match_key: Mapped[str | None] = mapped_column(String(200))
+
     # Denormalized counter for search ranking and list cards. Not a metric.
     public_report_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
@@ -64,6 +76,13 @@ class Company(UUIDPrimaryKey, Timestamped, Base):
         ),
         Index("ix_companies_aliases_gin", "aliases", postgresql_using="gin"),
         Index("ix_companies_report_count", "public_report_count"),
+        Index(
+            "uq_companies_match_key",
+            "match_key",
+            unique=True,
+            postgresql_where=text("match_key IS NOT NULL"),
+        ),
+        Index("ix_companies_directory_ref", "directory_source", "directory_ref"),
     )
 
 

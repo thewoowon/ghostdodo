@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator
 
 import pytest
 from app.core.redis import get_redis
-from app.db.session import SessionLocal
+from app.db.session import SessionLocal, dispose_engine
 from app.main import app
 from app.modules.companies.models import Company
 from app.modules.evidence.models import Evidence, EvidenceAccessLog
@@ -32,6 +32,20 @@ async def _reset_rate_limits() -> AsyncIterator[None]:
     if keys:
         await redis.delete(*keys)
     yield
+
+
+@pytest.fixture
+async def fresh_db() -> AsyncIterator[None]:
+    """Disposes the shared engine after a test that used the database directly.
+
+    asyncpg connections are bound to the event loop that opened them, and
+    pytest-asyncio gives each test its own loop. Without disposing, the second
+    DB-touching test in a module picks a pooled connection off a closed loop
+    and dies with "Event loop is closed". Tests that go through `client` get
+    this for free, because the app lifespan disposes on shutdown.
+    """
+    yield
+    await dispose_engine()
 
 
 @pytest.fixture

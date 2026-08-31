@@ -20,6 +20,7 @@ dependencies = [
     "structlog>=25.4",
     "orjson>=3.11",
     "email-validator>=2.2",
+    "defusedxml>=0.7.1",
 ]
 
 [dependency-groups]
@@ -30,6 +31,7 @@ dev = [
     "mypy>=1.18",
     "types-aioboto3[s3]>=15.0",
     "asgi-lifespan>=2.1",
+    "types-defusedxml>=0.7",
 ]
 
 [tool.uv]
