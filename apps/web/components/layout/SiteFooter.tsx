@@ -17,6 +17,8 @@ export function SiteFooter() {
           <Link href="/methodology">측정 기준</Link>
           <Link href="/policy/reporting">기록 정책</Link>
           <Link href="/policy/verification">검증 정책</Link>
+          <Link href="/policy/privacy">개인정보처리방침</Link>
+          <Link href="/policy/terms">이용약관</Link>
           <Link href="/about">소개</Link>
         </nav>
 

@@ -17,6 +17,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/dex", priority: 0.7 },
     { path: "/policy/reporting", priority: 0.5 },
     { path: "/policy/verification", priority: 0.5 },
+    { path: "/policy/privacy", priority: 0.4 },
+    { path: "/policy/terms", priority: 0.4 },
   ];
 
   const lastModified = new Date();

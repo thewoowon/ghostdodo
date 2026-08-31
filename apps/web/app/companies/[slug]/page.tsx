@@ -3,12 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { DodoEgg, FootprintMark, TimelineBone } from "@/components/brand/svg/marks";
+import { CorrectionForm } from "@/components/company/CorrectionForm";
 import { MetricCard } from "@/components/company/MetricCard";
 import { StageBreakdown } from "@/components/company/StageBreakdown";
 import { ReportCardList } from "@/components/company/ReportCardList";
 import { VerdictBadge } from "@/components/company/VerdictBadge";
-import { ApiError, ApiUnavailableError } from "@/lib/api/client";
 import { decodeRouteParam } from "@/lib/route-params";
+import { load } from "@/lib/api/load";
 import {
   getCompany,
   getCompanyMetrics,
@@ -60,30 +61,31 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   const slug = decodeRouteParam((await params).slug);
   const window = parseWindow((await searchParams).window);
 
-  let company, metrics, reports;
-  try {
-    // One round of parallel fetches — the page must not fan out per section
-    // (docs/04 §6: no N+1 on the company page).
-    [company, metrics, reports] = await Promise.all([
+  // One round of parallel fetches — the page must not fan out per section
+  // (docs/04 §6: no N+1 on the company page). Resolved to a value before any
+  // JSX is constructed, since a render-time error would escape a try/catch.
+  const result = await load(() =>
+    Promise.all([
       getCompany(slug),
       getCompanyMetrics(slug, window),
       getCompanyReports(slug),
-    ]);
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 404) notFound();
-    if (error instanceof ApiUnavailableError) {
-      return (
-        <div className={`gd-shell ${styles.errorState}`}>
-          <DodoEgg size={34} className={styles.errorMark} />
-          <h1 className={styles.errorTitle}>지금은 기록을 불러올 수 없습니다</h1>
-          <p className={styles.errorBody}>
-            일시적인 연결 문제입니다. 잠시 후 다시 시도해 주세요.
-          </p>
-        </div>
-      );
-    }
-    throw error;
+    ]),
+  );
+
+  if (!result.ok) {
+    if (result.failure === "not-found") notFound();
+    return (
+      <div className={`gd-shell ${styles.errorState}`}>
+        <DodoEgg size={34} className={styles.errorMark} />
+        <h1 className={styles.errorTitle}>지금은 기록을 불러올 수 없습니다</h1>
+        <p className={styles.errorBody}>
+          일시적인 연결 문제입니다. 잠시 후 다시 시도해 주세요.
+        </p>
+      </div>
+    );
   }
+
+  const [company, metrics, reports] = result.data;
 
   const verdict = responseVerdict(metrics.response_rate, metrics.eligibility);
   const windowLabel = WINDOW_LABELS[window];
@@ -208,8 +210,9 @@ export default async function CompanyPage({ params, searchParams }: Props) {
           회사 관계자는 기록에 대한 정정을 요청할 수 있습니다. 정정 절차는
           기록의 내용을 다루며, 작성자의 신원은 어떤 경우에도 공개되지 않습니다.
         </p>
+        <CorrectionForm slug={company.slug} />
         <Link href="/company-portal/claim" className={styles.correctionLink}>
-          사실관계 정정 요청
+          정정 절차 자세히 보기
         </Link>
       </section>
     </article>
