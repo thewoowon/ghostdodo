@@ -112,16 +112,59 @@ reputation ledger, and metric recompute all commit together or none do.
 
 ---
 
+## Company directory
+
+Search is only useful if the companies are in it. Names come from lawful
+public registries:
+
+```bash
+# 금융감독원 DART — official names for listed and reporting companies
+export DART_API_KEY=...          # free key: https://opendart.fss.or.kr
+uv run python -m app.scripts.import_companies dart --listed-only
+
+# 국민연금 가입 사업장 — broad coverage including private employers
+# bulk CSV from https://www.data.go.kr/data/3046071/openapi.do
+uv run python -m app.scripts.import_companies nps nps.csv --min-headcount 20
+```
+
+**Importing a name does not create a metric.** An imported company starts at
+zero observations and reads `표본 부족` until real applicants file qualified
+reports. `TestImportCreatesNoMetrics` asserts it.
+
+Name normalization is load-bearing: `주식회사 카카오`, `(주)카카오`,
+`카카오(주)`, and `카카오` must resolve to one company, or the observations
+split and every fragment stays under the publishable bar forever.
+
+---
+
+## Public launch gate
+
+docs/08 §11 lists what must work before real-company metrics go public:
+
+| | |
+|---|---|
+| Methodology page | ✅ rendered from the API's own config |
+| Report qualification thresholds | ✅ versioned in `methodology.py` |
+| Sample-size suppression | ✅ enforced in API and UI, tested both sides |
+| Evidence is private | ✅ signed URLs only, every view audit-logged |
+| Correction / dispute flow works | ✅ open route → moderation → recompute |
+| Moderation console works | ✅ `/admin/reports`, `/admin/disputes` |
+| Privacy policy & terms | ⚠️ written, **pending Korean legal review** |
+
+The last row is the remaining blocker, and it is not an engineering task.
+
+---
+
 ## Status
 
-Built and verified: monorepo, infra, 25-table schema with migrations, the
-metric engine, auth, reports, private evidence, moderation, reputation
-ledgers, the brand SVG system, landing / search / company / methodology /
-policy pages, and the report wizard.
+Built and verified: monorepo, infra, the schema with migrations, the metric
+engine, auth, reports, private evidence, moderation console, correction and
+dispute resolution, reputation ledgers, the company directory importers, the
+brand SVG system, and the public pages including the report wizard.
 
 Not yet built: community, jobs and outbound tracking, the application
-tracker, the company portal beyond its policy page, `/dex` leaderboards
-(intentionally closed until enough companies clear the sample bar), and share
-card generation.
+tracker, company claim verification, `/dex` leaderboards (intentionally
+closed until enough companies clear the sample bar), and share card
+generation.
 
 See [`docs/handoff/docs/09_ROADMAP_ACCEPTANCE.md`](docs/handoff/docs/09_ROADMAP_ACCEPTANCE.md).
