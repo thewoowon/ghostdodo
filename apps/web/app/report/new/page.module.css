@@ -1,0 +1,23 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-5);
+  padding-block: var(--gd-space-6);
+  max-width: 720px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-2);
+}
+
+.title {
+  font-size: var(--gd-text-2xl);
+}
+
+.lede {
+  color: var(--gd-ink-muted);
+  font-size: var(--gd-text-sm);
+  max-width: var(--gd-max-width-prose);
+}

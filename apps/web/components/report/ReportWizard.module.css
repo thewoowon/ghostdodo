@@ -1,0 +1,328 @@
+.wizard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-5);
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gd-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stepChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gd-space-2);
+  padding: var(--gd-space-1) var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  font-weight: 600;
+  color: var(--gd-ink-faint);
+  background: var(--gd-paper-sunken);
+  border-radius: var(--gd-radius-pill);
+}
+
+.stepIndex {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--gd-rule);
+  color: var(--gd-ink-muted);
+  font-size: 10px;
+}
+
+.stepCurrent {
+  color: var(--gd-accent-ink);
+  background: var(--gd-accent);
+}
+
+.stepCurrent .stepIndex {
+  background: color-mix(in srgb, var(--gd-accent-ink) 30%, transparent);
+  color: var(--gd-accent-ink);
+}
+
+.stepDone {
+  color: var(--gd-accent);
+  background: var(--gd-accent-soft);
+}
+
+.stepDone .stepIndex {
+  background: color-mix(in srgb, var(--gd-accent) 20%, transparent);
+  color: var(--gd-accent);
+}
+
+.restored {
+  padding: var(--gd-space-2) var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-muted);
+  background: var(--gd-paper-sunken);
+  border-radius: var(--gd-radius-sm);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-5);
+  padding: var(--gd-space-6);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+}
+
+/* Applies to both the <label> and <fieldset> forms of a field. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-2);
+  /* Reset the browser's default fieldset chrome. */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.field legend.label {
+  padding: 0;
+  margin-bottom: var(--gd-space-1);
+}
+
+.label {
+  font-weight: 600;
+  font-size: var(--gd-text-sm);
+}
+
+.hint {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+  line-height: 1.6;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: var(--gd-space-3) var(--gd-space-4);
+  background: var(--gd-paper);
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius);
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.counter {
+  align-self: flex-end;
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.error {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-extinct);
+  font-weight: 600;
+}
+
+.radioGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--gd-space-2);
+}
+
+.radio {
+  display: flex;
+  align-items: center;
+  padding: var(--gd-space-3) var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  font-weight: 500;
+  background: var(--gd-paper);
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius);
+  cursor: pointer;
+}
+
+.radioActive {
+  color: var(--gd-accent);
+  border-color: var(--gd-accent);
+  background: var(--gd-accent-soft);
+  font-weight: 600;
+}
+
+/* Keeps the native input focusable for keyboard and assistive tech while the
+   label provides the visible control. */
+.radioInput {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.radioInput:focus-visible + * ,
+.radio:has(.radioInput:focus-visible) {
+  outline: 2px solid var(--gd-accent);
+  outline-offset: 2px;
+}
+
+.toggleGroup {
+  display: inline-flex;
+  gap: var(--gd-space-2);
+}
+
+.toggle {
+  padding: var(--gd-space-2) var(--gd-space-5);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  background: var(--gd-paper);
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius-pill);
+  cursor: pointer;
+}
+
+.toggleActive {
+  color: var(--gd-accent);
+  border-color: var(--gd-accent);
+  background: var(--gd-accent-soft);
+}
+
+.piiWarning {
+  padding: var(--gd-space-4);
+  background: var(--gd-watch-soft);
+  border: 1px solid color-mix(in srgb, var(--gd-watch) 30%, transparent);
+  border-radius: var(--gd-radius);
+}
+
+.piiTitle {
+  font-weight: 700;
+  font-size: var(--gd-text-sm);
+  color: var(--gd-watch);
+}
+
+.piiList {
+  margin: var(--gd-space-2) 0 0;
+  padding-inline-start: 1.2em;
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-3);
+}
+
+.reviewTitle {
+  font-size: var(--gd-text-base);
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-2);
+  margin: 0;
+  padding: var(--gd-space-4);
+  background: var(--gd-paper-sunken);
+  border-radius: var(--gd-radius);
+}
+
+.reviewRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+}
+
+.reviewRow dt {
+  color: var(--gd-ink-faint);
+  white-space: nowrap;
+}
+
+.reviewRow dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: end;
+}
+
+.privateList {
+  margin: 0;
+  padding-inline-start: 1.2em;
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-1);
+}
+
+.submitError {
+  padding: var(--gd-space-3) var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-extinct);
+  background: var(--gd-extinct-soft);
+  border-radius: var(--gd-radius);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gd-space-3);
+}
+
+.primaryButton,
+.secondaryButton {
+  padding: var(--gd-space-3) var(--gd-space-6);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  border-radius: var(--gd-radius-pill);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.primaryButton {
+  color: var(--gd-accent-ink);
+  background: var(--gd-accent);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--gd-accent-hover);
+}
+
+.secondaryButton {
+  color: var(--gd-ink-muted);
+  background: var(--gd-paper);
+  border-color: var(--gd-rule-strong);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.done {
+  padding: var(--gd-space-7) var(--gd-space-6);
+  text-align: center;
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+}
+
+.doneTitle {
+  font-size: var(--gd-text-xl);
+}
+
+.doneBody {
+  margin-top: var(--gd-space-2);
+  color: var(--gd-ink-muted);
+  font-size: var(--gd-text-sm);
+}
+
+.doneMeta {
+  margin-top: var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
