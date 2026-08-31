@@ -1,0 +1,42 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gd-space-2);
+  padding: var(--gd-space-2) var(--gd-space-4);
+  border-radius: var(--gd-radius-pill);
+  font-size: var(--gd-text-sm);
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.alive {
+  color: var(--gd-alive);
+  background: var(--gd-alive-soft);
+  border-color: color-mix(in srgb, var(--gd-alive) 22%, transparent);
+}
+
+.watch {
+  color: var(--gd-watch);
+  background: var(--gd-watch-soft);
+  border-color: color-mix(in srgb, var(--gd-watch) 22%, transparent);
+}
+
+.extinct {
+  color: var(--gd-extinct);
+  background: var(--gd-extinct-soft);
+  border-color: color-mix(in srgb, var(--gd-extinct) 22%, transparent);
+}
+
+.unknown {
+  color: var(--gd-unknown);
+  background: var(--gd-unknown-soft);
+  border-color: color-mix(in srgb, var(--gd-unknown) 22%, transparent);
+}

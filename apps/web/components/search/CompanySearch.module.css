@@ -1,0 +1,153 @@
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-3);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius-lg);
+  box-shadow: var(--gd-shadow-card);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field:focus-within {
+  border-color: var(--gd-accent);
+  box-shadow: var(--gd-shadow-raised);
+}
+
+.hero .field {
+  padding: var(--gd-space-4) var(--gd-space-5);
+}
+
+.compact .field {
+  padding: var(--gd-space-3) var(--gd-space-4);
+}
+
+.mark {
+  color: var(--gd-accent);
+  flex: none;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+
+.hero .input {
+  font-size: var(--gd-text-lg);
+}
+
+.input::placeholder {
+  color: var(--gd-ink-faint);
+}
+
+/* Remove the browser's own clear button so the field keeps its own shape. */
+.input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.list {
+  position: absolute;
+  z-index: 30;
+  inset-inline: 0;
+  top: calc(100% + var(--gd-space-2));
+  margin: 0;
+  padding: var(--gd-space-2);
+  list-style: none;
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+  box-shadow: var(--gd-shadow-raised);
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-3);
+  width: 100%;
+  padding: var(--gd-space-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--gd-radius);
+  text-align: start;
+  cursor: pointer;
+}
+
+.optionActive {
+  background: var(--gd-accent-soft);
+}
+
+.monogram {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: var(--gd-radius-sm);
+  background: var(--gd-paper-sunken);
+  color: var(--gd-ink-muted);
+  font-weight: 700;
+  font-size: var(--gd-text-sm);
+}
+
+.optionBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.optionName {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-2);
+  font-weight: 600;
+  font-size: var(--gd-text-sm);
+}
+
+.demo {
+  padding: 1px var(--gd-space-2);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--gd-ink-faint);
+  background: var(--gd-paper-sunken);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-pill);
+}
+
+.optionMeta {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: var(--gd-space-4);
+}
+
+.emptyTitle {
+  font-weight: 600;
+  font-size: var(--gd-text-sm);
+}
+
+.emptyBody {
+  margin-top: var(--gd-space-1);
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.error {
+  margin-top: var(--gd-space-2);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-extinct);
+}

@@ -1,0 +1,80 @@
+/* Wide table scrolls inside its own container rather than the page body. */
+.wrap {
+  overflow-x: auto;
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+  background: var(--gd-paper-raised);
+}
+
+.table {
+  width: 100%;
+  min-width: 480px;
+  border-collapse: collapse;
+  font-size: var(--gd-text-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--gd-space-3) var(--gd-space-4);
+  text-align: start;
+  border-bottom: 1px solid var(--gd-rule);
+}
+
+.table thead th {
+  font-size: var(--gd-text-xs);
+  font-weight: 600;
+  color: var(--gd-ink-faint);
+  background: var(--gd-paper-sunken);
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.numeric {
+  text-align: end;
+}
+
+.stageName {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.suppressed {
+  color: var(--gd-ink-faint);
+  font-size: var(--gd-text-xs);
+}
+
+.bar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 96px;
+  padding: 2px var(--gd-space-2);
+  border-radius: var(--gd-radius-sm);
+  background: var(--gd-paper-sunken);
+  overflow: hidden;
+}
+
+.barFill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  background: var(--gd-alive-soft);
+}
+
+.barValue {
+  position: relative;
+  font-weight: 600;
+}
+
+.empty {
+  padding: var(--gd-space-5);
+  text-align: center;
+  color: var(--gd-ink-faint);
+  font-size: var(--gd-text-sm);
+  border: 1px dashed var(--gd-rule-strong);
+  border-radius: var(--gd-radius-lg);
+}

@@ -1,0 +1,115 @@
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--gd-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  padding: var(--gd-space-4);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gd-space-2);
+  padding-bottom: var(--gd-space-3);
+  border-bottom: 1px solid var(--gd-rule);
+}
+
+.stage {
+  padding: 2px var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  font-weight: 700;
+  color: var(--gd-accent);
+  background: var(--gd-accent-soft);
+  border-radius: var(--gd-radius-pill);
+}
+
+.role {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  font-size: var(--gd-text-xs);
+  font-weight: 600;
+  color: var(--gd-alive);
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-2);
+  margin: var(--gd-space-3) 0 0;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--gd-space-3);
+  font-size: var(--gd-text-sm);
+}
+
+.row dt {
+  color: var(--gd-ink-faint);
+  font-size: var(--gd-text-xs);
+  white-space: nowrap;
+}
+
+.row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: end;
+}
+
+.received {
+  color: var(--gd-alive);
+}
+
+.silent {
+  color: var(--gd-extinct);
+}
+
+.context {
+  margin-top: var(--gd-space-3);
+  padding-top: var(--gd-space-3);
+  border-top: 1px solid var(--gd-rule);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gd-space-2);
+  padding: var(--gd-space-7) var(--gd-space-5);
+  text-align: center;
+  border: 1px dashed var(--gd-rule-strong);
+  border-radius: var(--gd-radius-lg);
+}
+
+.emptyMark {
+  color: var(--gd-ink-faint);
+}
+
+.emptyTitle {
+  font-weight: 600;
+}
+
+.emptyBody {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-faint);
+}
