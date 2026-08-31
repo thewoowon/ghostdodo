@@ -23,6 +23,7 @@ from app.core.redis import close_redis, get_redis
 from app.db.session import db_session, dispose_engine
 from app.modules.auth.router import router as auth_router
 from app.modules.companies.router import router as companies_router
+from app.modules.disputes.router import router as disputes_router
 from app.modules.moderation.router import router as admin_router
 from app.modules.reports.router import router as reports_router
 from app.modules.users.router import router as me_router
@@ -219,7 +220,14 @@ async def health_ready() -> JSONResponse:
 # ── Routes ────────────────────────────────────────────────────────────────
 # Every business route lives under /api/v1; health checks stay unversioned
 # so an orchestrator's probe never breaks on an API version bump.
-for _router in (auth_router, companies_router, reports_router, me_router, admin_router):
+for _router in (
+    auth_router,
+    companies_router,
+    reports_router,
+    me_router,
+    admin_router,
+    disputes_router,
+):
     app.include_router(_router, prefix=API_PREFIX)
 
 
