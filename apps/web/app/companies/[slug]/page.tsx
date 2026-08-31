@@ -8,6 +8,7 @@ import { StageBreakdown } from "@/components/company/StageBreakdown";
 import { ReportCardList } from "@/components/company/ReportCardList";
 import { VerdictBadge } from "@/components/company/VerdictBadge";
 import { ApiError, ApiUnavailableError } from "@/lib/api/client";
+import { decodeRouteParam } from "@/lib/route-params";
 import {
   getCompany,
   getCompanyMetrics,
@@ -37,7 +38,7 @@ function parseWindow(value: string | undefined): MetricWindow {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const slug = decodeRouteParam((await params).slug);
   try {
     const company = await getCompany(slug);
     return {
@@ -56,7 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CompanyPage({ params, searchParams }: Props) {
-  const { slug } = await params;
+  const slug = decodeRouteParam((await params).slug);
   const window = parseWindow((await searchParams).window);
 
   let company, metrics, reports;
