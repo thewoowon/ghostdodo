@@ -70,3 +70,18 @@ The public launch gate (`docs/handoff/docs/08_TRUST_SAFETY_LEGAL.md` §11) is
 closed except for **Korean legal review of the privacy policy and terms**.
 Deploying did not change that. Until it closes, only the five fictional demo
 companies may exist in production.
+
+Both documents were brought up to the statutory checklist on 2026-09-02 and
+`docs/legal/REVIEW_REQUEST.md` is the package to hand counsel. What comes
+back may create engineering work, and two answers in particular:
+
+- **국외 이전** — if the answer is that account data cannot sit on Railway in
+  the US, hosting changes. Ask this before provisioning anything.
+- **임시조치** — a takedown obligation that pulls against "a company cannot
+  delete a record". Whatever counsel says, do not resolve it by giving
+  companies a delete path.
+
+Also outstanding, and now written into the privacy policy as a manual
+process: **there is no account deletion endpoint.** `deactivated_at` exists
+on the model and nothing sets it. Building `DELETE /me` is a small piece of
+work, and it would let the policy promise a button instead of a mailbox.

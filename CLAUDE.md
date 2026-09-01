@@ -214,6 +214,26 @@ closed except for **Korean legal review of the privacy policy and terms**. That
 is the remaining blocker before real-company metrics can go public, and it is
 not an engineering task.
 
+The two documents are now review-ready rather than drafts: the privacy policy
+follows the section order of 개인정보 보호법 제30조 so a reviewer can walk it
+against the statute, and both name `privacy@ghostdodo.com` as the single
+intake. `docs/legal/REVIEW_REQUEST.md` carries the data inventory and the
+questions for counsel. Two of the answers can change engineering:
+
+- **Cross-border transfer.** Account data and every report live on Railway in
+  the US. If counsel says that needs domestic processing, the hosting choice
+  changes — cheapest to do before the first deploy.
+- **임시조치 (정보통신망법 제44조의2).** A rights-infringement notice may
+  oblige the operator to suspend a post, which sits directly against the
+  product rule that a company cannot delete a record. Do not resolve this
+  tension by quietly giving companies a delete path.
+
+**There is no account deletion endpoint.** `deactivated_at` exists on the
+model but nothing user-facing sets it, so 탈퇴 and 삭제 requests are handled
+by hand through the mailbox. The privacy policy says exactly that rather than
+promising a button that does not exist — if you build the endpoint, the
+wording has to change with it.
+
 Real company data has **not** been imported yet — this is deliberate, pending
 that review. Development runs on fictional fixtures (`pnpm api:seed`), all
 flagged `is_demo` and labelled `샘플 데이터` in the UI.

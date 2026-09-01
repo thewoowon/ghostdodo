@@ -232,9 +232,17 @@ docs/08 §11 lists what must work before real-company metrics go public:
 | Evidence is private | ✅ signed URLs only, every view audit-logged |
 | Correction / dispute flow works | ✅ open route → moderation → recompute |
 | Moderation console works | ✅ `/admin/reports`, `/admin/disputes` |
-| Privacy policy & terms | ⚠️ written, **pending Korean legal review** |
+| Privacy policy & terms | ⚠️ review-ready, **pending Korean legal review** |
 
 The last row is the remaining blocker, and it is not an engineering task.
+Both documents now carry the mandatory sections of 개인정보 보호법 제30조 —
+processing consignment and cross-border transfer, destruction procedure, the
+CPO contact, cookies, security measures, and remedies — and the terms cover
+contract formation, termination, governing law, and the change-notice
+periods. `docs/legal/REVIEW_REQUEST.md` is the package for counsel: the data
+inventory, and the seven questions only a lawyer can answer. The sharpest of
+them is the tension between 정보통신망법 제44조의2 (임시조치) and the product
+rule that a company cannot delete a record.
 
 ---
 
