@@ -20,11 +20,16 @@ export const DODO_BODY =
  * Oversized hooked beak — the identifying feature of the silhouette.
  * Authored as ONE closed path (upper edge → tip → hook → lower edge) so it
  * renders seamlessly rather than showing a join at small sizes.
+ *
+ * The hook carries real width: its outer and inner edges stay ~5 units apart
+ * so it reads as beak, not as a stray whisker hanging off the tip. An earlier
+ * version curled them back nearly parallel and the leftover sliver looked like
+ * a hair at every size.
  */
 export const DODO_BEAK =
-  "M22 18.6C13.2 19.5 4.4 24.3 4.4 28.9c0 1.6 1 2.9 2.6 3.7" +
-  "-.9 2.4-.3 5.2 1.7 6.9.9.8 2.1 1.2 3.2 1.1" +
-  "-2.1-2-3-4.8-2.6-7.5 1.2.3 2.6.4 4.1.3l8.6-.6z";
+  "M22 18.6C13.2 19.5 4.4 24.3 4.4 28.9" +
+  "c0 4.5 2.7 8.2 6.7 9.6" +
+  ".7-2.5 2-4.7 3.5-5.6l7.8-.5z";
 
 /** Mandible seam. Detail only — omitted below ~64px where it turns to mush. */
 export const DODO_BEAK_SEAM = "M7.4 26.8c3.7-2.3 9-4.2 14.4-4.9";

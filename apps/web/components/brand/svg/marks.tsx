@@ -102,18 +102,33 @@ export function FossilMark({ title, size = 24, ...rest }: MarkProps) {
   return (
     <svg {...frame({ title, size, ...rest })}>
       {title ? <title>{title}</title> : null}
+      {/* Two crossed bones, built from TimelineBone's vocabulary: a shaft with
+          a pair of knobs at each end. An earlier version drew closed stadium
+          outlines instead, which read as chain links rather than bones and
+          overflowed the 24 box by 0.85 at the top and bottom. Everything here
+          stays inside 2.85–21.15 on both axes. */}
+      <g opacity="0.55">
+        <path
+          d="M8.1 15.9l7.8-7.8"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="7.45" cy="4.95" r="2.1" fill="currentColor" />
+        <circle cx="4.95" cy="7.45" r="2.1" fill="currentColor" />
+        <circle cx="19.05" cy="16.55" r="2.1" fill="currentColor" />
+        <circle cx="16.55" cy="19.05" r="2.1" fill="currentColor" />
+      </g>
       <path
-        d="M4.6 19.4c-1.4-1.4-1.4-3.6 0-5s3.6-1.4 5 0l4.4 4.4c1.4 1.4 1.4 3.6 0 5s-3.6 1.4-5 0z"
+        d="M8.1 8.1l7.8 7.8"
         stroke="currentColor"
-        strokeWidth="1.7"
+        strokeWidth="2.5"
+        strokeLinecap="round"
       />
-      <path
-        d="M19.4 4.6c1.4 1.4 1.4 3.6 0 5s-3.6 1.4-5 0L10 5.2c-1.4-1.4-1.4-3.6 0-5s3.6-1.4 5 0z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        opacity="0.55"
-      />
-      <path d="M9 15l6-6" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <circle cx="4.95" cy="16.55" r="2.1" fill="currentColor" />
+      <circle cx="7.45" cy="19.05" r="2.1" fill="currentColor" />
+      <circle cx="16.55" cy="4.95" r="2.1" fill="currentColor" />
+      <circle cx="19.05" cy="7.45" r="2.1" fill="currentColor" />
     </svg>
   );
 }
