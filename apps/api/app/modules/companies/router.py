@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import select
 
 from app.api_deps import DbSession, OptionalUser, client_ip
@@ -16,11 +16,15 @@ from app.modules.companies.schemas import (
     CompanyDetail,
     CompanySummary,
 )
+from app.modules.jobs import service as jobs_service
+from app.modules.jobs.router import require_jobs_enabled
+from app.modules.jobs.schemas import JobCard
 from app.modules.metrics.schemas import CompanyMetricsOut
 from app.modules.metrics.service import get_snapshot
 from app.modules.reports.models import RecruitmentExperience
 from app.modules.reports.schemas import PublicReportCard
 from app.shared.enums import PUBLIC_REPORT_STATUSES, MetricWindow
+from app.shared.schemas import Page
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -81,6 +85,27 @@ async def reports(
         .limit(limit)
     )
     return [PublicReportCard.model_validate(r) for r in rows.scalars().all()]
+
+
+@router.get(
+    "/{slug}/jobs",
+    response_model=Page[JobCard],
+    dependencies=[Depends(require_jobs_enabled)],
+)
+async def jobs(
+    slug: str,
+    db: DbSession,
+    cursor: Annotated[str | None, Query(max_length=200)] = None,
+    limit: Annotated[int, Query(ge=1, le=50)] = 20,
+) -> Page[JobCard]:
+    """The company jobs tab. Postings say a company is hiring; they say
+    nothing about how it answers, so nothing here feeds a metric."""
+    company = await service.get_company_by_slug(db, slug)
+    page = await jobs_service.list_jobs(db, company_id=company.id, cursor=cursor, limit=limit)
+    return Page(
+        items=[JobCard.of(row.job, row.company) for row in page.rows],
+        next_cursor=page.next_cursor,
+    )
 
 
 @router.post("/request", response_model=CompanyAddRequestAccepted, status_code=202)

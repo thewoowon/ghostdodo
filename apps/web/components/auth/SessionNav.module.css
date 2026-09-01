@@ -1,0 +1,49 @@
+/* Holds the row's width while the session resolves, so the nav does not
+   jump when the answer arrives. */
+.placeholder {
+  display: inline-block;
+  width: 4rem;
+}
+
+.signIn,
+.handle {
+  padding: var(--gd-space-2) var(--gd-space-3);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-ink-muted);
+  border-radius: var(--gd-radius-sm);
+}
+
+.signIn:hover,
+.handle:hover {
+  color: var(--gd-ink);
+  background: var(--gd-paper-sunken);
+}
+
+.account {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gd-space-1);
+}
+
+.handle {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signOut {
+  padding: var(--gd-space-2);
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+  background: none;
+  border: 0;
+  border-radius: var(--gd-radius-sm);
+  cursor: pointer;
+}
+
+.signOut:hover {
+  color: var(--gd-ink);
+  background: var(--gd-paper-sunken);
+}

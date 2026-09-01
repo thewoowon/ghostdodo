@@ -181,3 +181,62 @@ export const WINDOW_LABELS: Record<MetricWindow, string> = {
   "12m": "최근 12개월",
   all: "전체 기간",
 };
+
+/**
+ * Reputation ranks. Names are from docs/07 §3 — original, and deliberately
+ * about observation and record-keeping rather than status over other people.
+ */
+export const REPUTATION_RANKS = [
+  "OBSERVER",
+  "EXPLORER",
+  "RECORDER",
+  "VERIFIER",
+  "ARCHIVIST",
+  "DODO_RANGER",
+] as const;
+export type ReputationRank = (typeof REPUTATION_RANKS)[number];
+
+export const RANK_LABELS: Record<ReputationRank, string> = {
+  OBSERVER: "관찰자",
+  EXPLORER: "탐사자",
+  RECORDER: "기록자",
+  VERIFIER: "검증자",
+  ARCHIVIST: "아키비스트",
+  DODO_RANGER: "도도 레인저",
+};
+
+/**
+ * What each ledger line means, in plain Korean.
+ *
+ * Every positive entry describes completeness, evidence, or corroboration —
+ * none of them describes what a report said about a company. That is the
+ * award table's rule (docs/07 §2) surfacing in the copy.
+ */
+export const REPUTATION_EVENT_LABELS: Record<string, string> = {
+  REPORT_SUBMITTED_COMPLETE: "기록 제출 (내용 충실)",
+  REPORT_VERIFIED: "기록 검증 완료",
+  EVIDENCE_VERIFIED: "증빙 확인",
+  REPORT_CORROBORATED: "다른 기록과 교차 확인",
+  FACTUAL_CORRECTION_ACCEPTED: "정정 요청 반영",
+  COMPANY_METADATA_ACCEPTED: "회사 정보 보완",
+  PII_FLAG_ACCEPTED: "개인정보 신고 반영",
+  HELPFUL_COMMUNITY_ANSWER: "도움이 된 답변",
+  REPORT_REVERSED: "기록 검증 철회",
+  MODERATION_SANCTION: "운영 제재",
+};
+
+export const CREDIT_EVENT_LABELS: Record<string, string> = {
+  CONTRIBUTION_REWARD: "기여 보상",
+  VERIFICATION_BONUS: "검증 보너스",
+  FIRST_OBSERVATION_BONUS: "최초 관측 보너스",
+  COSMETIC_PURCHASE: "꾸미기 사용",
+  ADJUSTMENT: "조정",
+  REVERSAL: "회수",
+};
+
+export const TRUST_STATE_LABELS: Record<string, string> = {
+  NEW: "신규",
+  ACTIVE: "정상",
+  RESTRICTED: "제한",
+  SUSPENDED: "정지",
+};

@@ -191,3 +191,21 @@
   color: var(--gd-ink-faint);
   font-size: var(--gd-text-sm);
 }
+
+.jobsHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gd-space-3);
+}
+
+.jobsLink {
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-accent);
+}
+
+.jobsLink:hover {
+  text-decoration: underline;
+}

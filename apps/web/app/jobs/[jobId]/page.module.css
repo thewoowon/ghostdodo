@@ -1,0 +1,252 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-6);
+  padding-block: var(--gd-space-6) var(--gd-space-9);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-2);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-faint);
+}
+
+.breadcrumbLink:hover {
+  color: var(--gd-accent);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-3);
+}
+
+.headMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gd-space-2);
+}
+
+.source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--gd-text-xs);
+  font-weight: 600;
+  color: var(--gd-ink-faint);
+}
+
+.closing {
+  padding: 2px var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  font-weight: 700;
+  border-radius: var(--gd-radius-pill);
+}
+
+.always,
+.dated {
+  color: var(--gd-ink-muted);
+  background: var(--gd-paper-sunken);
+}
+
+.soon,
+.today {
+  color: var(--gd-watch);
+  background: var(--gd-watch-soft);
+}
+
+.closed {
+  color: var(--gd-unknown);
+  background: var(--gd-unknown-soft);
+}
+
+.demoTag {
+  padding: 1px var(--gd-space-2);
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+  background: var(--gd-paper-sunken);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-pill);
+}
+
+.title {
+  font-size: var(--gd-text-2xl);
+}
+
+.company {
+  color: var(--gd-ink-muted);
+}
+
+.companyLink {
+  font-weight: 700;
+  color: var(--gd-ink);
+}
+
+.companyLink:hover {
+  color: var(--gd-accent);
+}
+
+.facets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gd-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.facet {
+  padding: 2px var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-muted);
+  background: var(--gd-paper-sunken);
+  border-radius: var(--gd-radius-sm);
+}
+
+.demoNotice {
+  padding: var(--gd-space-3) var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+  background: var(--gd-paper-sunken);
+  border: 1px dashed var(--gd-rule-strong);
+  border-radius: var(--gd-radius);
+}
+
+.record {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-3);
+  padding: var(--gd-space-5);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+  box-shadow: var(--gd-shadow-card);
+}
+
+.recordHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gd-space-3);
+}
+
+.h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-2);
+  font-size: var(--gd-text-xl);
+}
+
+.h2Mark {
+  color: var(--gd-accent);
+}
+
+.recordBody {
+  color: var(--gd-ink-muted);
+}
+
+.recordStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--gd-space-4);
+  margin: 0;
+  padding-block: var(--gd-space-2);
+}
+
+.stat dt {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.stat dd {
+  margin: 0;
+  font-size: var(--gd-text-xl);
+  font-weight: 700;
+}
+
+.provenance {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+}
+
+.eligibilityNote {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-faint);
+}
+
+.recordLink {
+  font-weight: 600;
+  color: var(--gd-accent);
+}
+
+.recordLink:hover {
+  text-decoration: underline;
+}
+
+.apply {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gd-space-3);
+}
+
+.applyNote {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-faint);
+  max-width: var(--gd-max-width-prose);
+}
+
+.contribute {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gd-space-2);
+  padding: var(--gd-space-5);
+  background: var(--gd-paper-sunken);
+  border-radius: var(--gd-radius-lg);
+}
+
+.contributeTitle {
+  font-size: var(--gd-text-lg);
+}
+
+.contributeBody {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+  max-width: var(--gd-max-width-prose);
+}
+
+.contributeLink {
+  margin-top: var(--gd-space-2);
+  font-weight: 700;
+  color: var(--gd-accent);
+}
+
+.contributeLink:hover {
+  text-decoration: underline;
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gd-space-3);
+  padding-block: var(--gd-space-9);
+  text-align: center;
+}
+
+.errorMark {
+  color: var(--gd-ink-faint);
+}
+
+.errorTitle {
+  font-size: var(--gd-text-xl);
+}
+
+.errorBody {
+  color: var(--gd-ink-muted);
+}

@@ -24,6 +24,7 @@ from app.db.session import db_session, dispose_engine
 from app.modules.auth.router import router as auth_router
 from app.modules.companies.router import router as companies_router
 from app.modules.disputes.router import router as disputes_router
+from app.modules.jobs.router import router as jobs_router
 from app.modules.moderation.router import router as admin_router
 from app.modules.reports.router import router as reports_router
 from app.modules.users.router import router as me_router
@@ -227,6 +228,7 @@ for _router in (
     me_router,
     admin_router,
     disputes_router,
+    jobs_router,
 ):
     app.include_router(_router, prefix=API_PREFIX)
 

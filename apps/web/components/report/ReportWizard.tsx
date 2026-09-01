@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ApiError, ApiUnavailableError, apiRequest } from "@/lib/api/client";
@@ -17,6 +18,7 @@ import {
   ROLE_LABELS,
   SOURCE_LABELS,
   STAGE_LABELS,
+  VERIFICATION_LABELS,
 } from "@/lib/domain";
 import {
   EMPTY_DRAFT,
@@ -60,6 +62,7 @@ export function ReportWizard() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [submitted, setSubmitted] = useState<OwnReport | null>(null);
   const [restored, setRestored] = useState(false);
 
@@ -153,6 +156,7 @@ export function ReportWizard() {
   async function submit() {
     setSubmitting(true);
     setSubmitError(null);
+    setNeedsSignIn(false);
     try {
       // Create then submit: the draft exists server-side before it enters the
       // verification pipeline, so a failure at submit does not lose the data.
@@ -172,11 +176,13 @@ export function ReportWizard() {
       }
     } catch (error) {
       if (error instanceof ApiError) {
-        setSubmitError(
-          error.code === "UNAUTHORIZED"
-            ? "기록을 남기려면 먼저 로그인해 주세요."
-            : error.message,
-        );
+        // The draft stays in localStorage, so signing in and coming back
+        // resumes exactly where this left off rather than starting over.
+        if (error.status === 401) {
+          setNeedsSignIn(true);
+        } else {
+          setSubmitError(error.message);
+        }
       } else if (error instanceof ApiUnavailableError) {
         setSubmitError("서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.");
       } else {
@@ -194,11 +200,18 @@ export function ReportWizard() {
       <div className={styles.done} role="status">
         <h2 className={styles.doneTitle}>기록이 접수되었습니다</h2>
         <p className={styles.doneBody}>
-          제출한 기록은 검토를 거친 뒤 회사 지표에 반영됩니다. 검토 결과는
-          내 기록 목록에서 확인할 수 있습니다.
+          제출한 기록은 검토를 거친 뒤 회사 지표에 반영됩니다. 검토 상태는{" "}
+          <Link href="/me/reports" className={styles.doneLink}>
+            내 기록
+          </Link>
+          에서 확인할 수 있습니다.
         </p>
         <p className={styles.doneMeta}>
-          현재 상태: <strong>{submitted.verification_status}</strong>
+          현재 상태:{" "}
+          <strong>
+            {VERIFICATION_LABELS[submitted.verification_status] ??
+              submitted.verification_status}
+          </strong>
         </p>
       </div>
     );
@@ -493,6 +506,21 @@ export function ReportWizard() {
               <li>지원한 직무명 원문 — 직군으로만 집계됩니다.</li>
               <li>첨부한 자료 — 검증 목적으로만 열람됩니다.</li>
             </ul>
+
+            {needsSignIn && (
+              <div className={styles.signInPrompt} role="alert">
+                <p className={styles.signInTitle}>
+                  기록을 남기려면 먼저 로그인해 주세요.
+                </p>
+                <p className={styles.signInBody}>
+                  작성하신 내용은 이 브라우저에 저장되어 있습니다. 로그인한 뒤
+                  돌아오면 이어서 제출할 수 있습니다.
+                </p>
+                <Link href="/sign-in?next=%2Freport%2Fnew" className={styles.signInLink}>
+                  로그인하러 가기
+                </Link>
+              </div>
+            )}
 
             {submitError && (
               <p className={styles.submitError} role="alert">

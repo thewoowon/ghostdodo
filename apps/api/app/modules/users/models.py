@@ -27,6 +27,11 @@ class User(UUIDPrimaryKey, Timestamped, Base):
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    # Google's stable subject id. Matched before email, because a Google
+    # account's address can change while `sub` never does — keying only on
+    # email would hand the account to whoever inherits the old address.
+    google_sub: Mapped[str | None] = mapped_column(String(64), unique=True)
+
     role: Mapped[UserRole] = mapped_column(
         domain_enum(UserRole, "user_role"),
         default=UserRole.USER,

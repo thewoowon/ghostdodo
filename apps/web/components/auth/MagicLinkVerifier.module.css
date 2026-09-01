@@ -1,0 +1,24 @@
+.working {
+  color: var(--gd-ink-muted);
+}
+
+.mark {
+  color: var(--gd-ink-faint);
+}
+
+.title {
+  font-size: var(--gd-text-xl);
+}
+
+.body {
+  color: var(--gd-ink-muted);
+}
+
+.link {
+  font-weight: 700;
+  color: var(--gd-accent);
+}
+
+.link:hover {
+  text-decoration: underline;
+}

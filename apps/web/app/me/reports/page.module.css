@@ -1,0 +1,138 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-5);
+  padding-block: var(--gd-space-7) var(--gd-space-9);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-3);
+  max-width: var(--gd-max-width-prose);
+}
+
+.title {
+  font-size: var(--gd-text-2xl);
+}
+
+.lede {
+  color: var(--gd-ink-muted);
+}
+
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--gd-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  padding: var(--gd-space-4);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gd-space-2);
+  padding-bottom: var(--gd-space-3);
+  border-bottom: 1px solid var(--gd-rule);
+}
+
+.status {
+  padding: 2px var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  font-weight: 700;
+  color: var(--gd-accent);
+  background: var(--gd-accent-soft);
+  border-radius: var(--gd-radius-pill);
+}
+
+.role {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.evidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  font-size: var(--gd-text-xs);
+  font-weight: 600;
+  color: var(--gd-alive);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-2);
+  margin: var(--gd-space-3) 0 0;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--gd-space-3);
+  font-size: var(--gd-text-sm);
+}
+
+.row dt {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+  white-space: nowrap;
+}
+
+.row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: end;
+}
+
+.empty,
+.gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gd-space-3);
+  padding: var(--gd-space-8) var(--gd-space-5);
+  text-align: center;
+}
+
+.empty {
+  border: 1px dashed var(--gd-rule-strong);
+  border-radius: var(--gd-radius-lg);
+}
+
+.emptyMark,
+.gateMark {
+  color: var(--gd-ink-faint);
+}
+
+.emptyTitle,
+.gateTitle {
+  font-size: var(--gd-text-xl);
+  font-weight: 700;
+}
+
+.gateBody {
+  color: var(--gd-ink-muted);
+}
+
+.emptyLink,
+.gateLink {
+  font-weight: 700;
+  color: var(--gd-accent);
+}
+
+.emptyLink:hover,
+.gateLink:hover {
+  text-decoration: underline;
+}

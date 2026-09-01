@@ -1,7 +1,9 @@
-"""Passwordless email sign-in.
+"""Passwordless sign-in: Google, and the original magic link.
 
-Magic links avoid storing passwords entirely — one less category of breach,
-and a lower barrier for a contributor who visits a handful of times a year.
+Neither stores a password — one less category of breach. The two providers
+are deliberately not separate account systems: both resolve to one `User`
+row keyed on a verified email, so a contributor who signs in with Google
+after using the magic link keeps their reports, reputation, and handle.
 """
 
 from __future__ import annotations
@@ -16,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.security import hash_token, magic_link_expiry, new_token
+from app.modules.auth.google import GoogleProfile
 from app.modules.users.models import MagicLinkToken, User
 from app.shared.enums import TrustState, UserRole
 from app.shared.errors import UnauthorizedError
@@ -90,3 +93,47 @@ async def deliver_magic_link(email: str, token: str) -> None:
         log.info("auth.magic_link.console", email=email, link=link)
         return
     raise NotImplementedError(f"EMAIL_PROVIDER '{settings.email_provider}' is not configured")
+
+
+async def sign_in_with_google(session: AsyncSession, *, profile: GoogleProfile) -> User:
+    """Resolves a verified Google identity to an account, creating one on
+    first sign-in.
+
+    Match order matters. `sub` comes first because it is stable for the life
+    of the Google account, while the address on it can be changed or
+    released; matching on email alone would hand an account to whoever
+    inherits an old address. Email is the second key precisely so that a
+    contributor who started with the magic link lands on the same row rather
+    than a duplicate — and it is only trusted here because the caller has
+    already rejected any profile Google did not mark verified.
+    """
+    now = datetime.now(UTC)
+
+    user = (
+        await session.execute(select(User).where(User.google_sub == profile.sub))
+    ).scalar_one_or_none()
+
+    if user is None:
+        user = (
+            await session.execute(select(User).where(User.email == profile.email))
+        ).scalar_one_or_none()
+        if user is not None:
+            # Linking an existing magic-link account to its Google identity.
+            user.google_sub = profile.sub
+
+    if user is None:
+        user = User(
+            email=profile.email,
+            handle=_handle_from_email(profile.email),
+            google_sub=profile.sub,
+            role=UserRole.USER,
+            trust_state=TrustState.NEW,
+            email_verified_at=now,
+        )
+        session.add(user)
+        await session.flush()
+    elif user.email_verified_at is None:
+        user.email_verified_at = now
+
+    log.info("auth.google.signed_in", user_id=str(user.id))
+    return user

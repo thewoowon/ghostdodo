@@ -25,9 +25,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.methodology import get_methodology
 from app.db.session import db_session, dispose_engine
 from app.modules.companies.models import Company
+from app.modules.jobs.models import JobPosting
 from app.modules.metrics.service import recompute_company
 from app.modules.reports.models import RecruitmentExperience
 from app.modules.reports.service import compute_dedupe_hash
+from app.modules.reputation import service as reputation_service
 from app.modules.users.models import User
 from app.shared.enums import (
     ApplicationSource,
@@ -36,6 +38,7 @@ from app.shared.enums import (
     EmploymentType,
     HiringStage,
     Outcome,
+    ReputationEventType,
     RoleCategory,
     TrustState,
     UserRole,
@@ -96,6 +99,42 @@ DEMO_COMPANIES: list[dict[str, Any]] = [
         "size_band": CompanySizeBand.B10_49,
         # Deliberately under the publishable bar, to exercise `표본 부족`.
         "profile": "sparse",
+    },
+]
+
+
+# Linked postings for the fictional companies. Every URL points at the
+# reserved example.com domain, so a stray click in development can never land
+# on a real employer's careers page.
+DEMO_JOBS: list[dict[str, Any]] = [
+    {
+        "title": "프론트엔드 개발자",
+        "role_category": RoleCategory.SOFTWARE_ENGINEERING,
+        "employment_type": EmploymentType.FULL_TIME,
+        "location": "서울 강남구",
+        "source": ApplicationSource.WANTED,
+        "source_label": "원티드",
+        "closes_in_days": 21,
+    },
+    {
+        "title": "백엔드 개발자 (Python)",
+        "role_category": RoleCategory.SOFTWARE_ENGINEERING,
+        "employment_type": EmploymentType.FULL_TIME,
+        "location": "서울 성동구",
+        "source": ApplicationSource.COMPANY_SITE,
+        "source_label": "자사 채용 페이지",
+        "closes_in_days": None,
+    },
+    {
+        "title": "프로덕트 디자이너",
+        "role_category": RoleCategory.DESIGN,
+        "employment_type": EmploymentType.CONTRACT,
+        "location": "원격",
+        "source": ApplicationSource.SARAMIN,
+        "source_label": "사람인",
+        # Already past its closing date, so the expired-link path stays
+        # visible in development.
+        "closes_in_days": -4,
     },
 ]
 
@@ -211,11 +250,15 @@ async def seed(reset: bool = False) -> None:
                 rng=rng,
                 now=now,
             )
+            await _seed_jobs(session, company=company, now=now)
 
         await session.commit()
 
         for company in created:
             await recompute_company(session, company.id, methodology=get_methodology(), now=now)
+        await session.commit()
+
+        await _seed_reputation(session, contributors=contributors)
         await session.commit()
 
         print(f"seeded {len(created)} demo companies")
@@ -329,6 +372,84 @@ async def _seed_reports(
 
     company.public_report_count = total
     await session.flush()
+
+
+async def _seed_jobs(session: AsyncSession, *, company: Company, now: datetime) -> None:
+    """Deep-link postings. These establish that a company is hiring and
+    nothing else — a posting never becomes an observation, so seeding one
+    must not move a single metric."""
+    existing = (
+        await session.execute(select(JobPosting.id).where(JobPosting.company_id == company.id))
+    ).first()
+    if existing is not None:
+        return
+
+    for i, spec in enumerate(DEMO_JOBS):
+        closes_in = spec["closes_in_days"]
+        session.add(
+            JobPosting(
+                company_id=company.id,
+                title=str(spec["title"]),
+                role_category=spec["role_category"],
+                employment_type=spec["employment_type"],
+                location=str(spec["location"]),
+                source=spec["source"],
+                source_label=str(spec["source_label"]),
+                source_url=f"https://example.com/{company.slug}/jobs/{i + 1}",
+                closes_on=None if closes_in is None else (now + timedelta(days=closes_in)).date(),
+                observed_at=now - timedelta(days=i),
+                last_checked_at=now,
+            )
+        )
+    await session.flush()
+
+
+async def _seed_reputation(session: AsyncSession, *, contributors: list[User]) -> None:
+    """Runs the seeded reports through the real award path.
+
+    Fixtures write `verification_status=VERIFIED` directly, which is fine for
+    the metric engine but means no contributor ever accrues standing — so the
+    profile, ranks, ledgers and badges all render empty in development even
+    though the engine behind them works. Awarding here exercises the same
+    code moderation uses, rather than inserting ledger rows by hand.
+    """
+    for user in contributors:
+        reports = (
+            (
+                await session.execute(
+                    select(RecruitmentExperience).where(
+                        RecruitmentExperience.user_id == user.id,
+                        RecruitmentExperience.verification_status == VerificationStatus.VERIFIED,
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        for report in reports:
+            await reputation_service.award(
+                session,
+                user=user,
+                event_type=ReputationEventType.REPORT_SUBMITTED_COMPLETE,
+                subject_type="recruitment_experience",
+                subject_id=report.id,
+                dedupe_key=f"report_submitted:{report.id}",
+            )
+            # Verification is what moves the counter, and the counter is what
+            # rank and badge rules read — so it is incremented here exactly
+            # as `verification/service.py` does it.
+            user.verified_contribution_count += 1
+            await reputation_service.award(
+                session,
+                user=user,
+                event_type=ReputationEventType.REPORT_VERIFIED,
+                subject_type="recruitment_experience",
+                subject_id=report.id,
+                dedupe_key=f"report_verified:{report.id}",
+            )
+
+    ranked = [f"{u.handle}({u.rank.value} {u.reputation_score}점)" for u in contributors[:3]]
+    print(f"  reputation seeded — {', '.join(ranked)} …")
 
 
 if __name__ == "__main__":

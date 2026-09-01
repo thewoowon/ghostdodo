@@ -15,6 +15,17 @@ function baseUrl(): string {
   return typeof window === "undefined" ? INTERNAL_BASE : PUBLIC_BASE;
 }
 
+/**
+ * The API origin as the browser must reach it.
+ *
+ * Needed for links the browser *navigates* to rather than fetches — the
+ * Google sign-in hop leaves the app entirely, so it cannot go through
+ * `apiRequest`, and it must never use the internal address.
+ */
+export function publicApiUrl(path: string): string {
+  return `${PUBLIC_BASE}${path}`;
+}
+
 /** A failure the API described in its error envelope. */
 export class ApiError extends Error {
   readonly code: string;
@@ -51,14 +62,25 @@ export type RequestOptions = {
   next?: { revalidate?: number | false; tags?: string[] };
   cache?: RequestCache;
   signal?: AbortSignal;
+  /** Lets the request outlive the page that started it — required for a
+   *  click that is recorded as the browser navigates away. */
+  keepalive?: boolean;
 };
 
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", body, cookie, idempotencyKey, next, cache, signal } =
-    options;
+  const {
+    method = "GET",
+    body,
+    cookie,
+    idempotencyKey,
+    next,
+    cache,
+    signal,
+    keepalive,
+  } = options;
 
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -76,6 +98,7 @@ export async function apiRequest<T>(
       ...(next ? { next } : {}),
       ...(cache ? { cache } : {}),
       ...(signal ? { signal } : {}),
+      ...(keepalive ? { keepalive } : {}),
     });
   } catch (cause) {
     throw new ApiUnavailableError(cause);

@@ -1,0 +1,181 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-6);
+  padding-block: var(--gd-space-7) var(--gd-space-9);
+}
+
+.identity {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gd-space-5);
+}
+
+.identityText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-2);
+}
+
+.handle {
+  font-size: var(--gd-text-2xl);
+}
+
+.rankLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gd-space-2);
+  color: var(--gd-ink-muted);
+}
+
+.trust {
+  padding: 1px var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  font-weight: 700;
+  color: var(--gd-watch);
+  background: var(--gd-watch-soft);
+  border-radius: var(--gd-radius-pill);
+}
+
+.pseudonym {
+  max-width: var(--gd-max-width-prose);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-faint);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--gd-space-4);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-1);
+  padding: var(--gd-space-5);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+}
+
+.statLabel {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.statValue {
+  font-size: var(--gd-text-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.statNote {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.statLink {
+  font-weight: 600;
+  color: var(--gd-accent);
+}
+
+.statLink:hover {
+  text-decoration: underline;
+}
+
+.principle {
+  max-width: var(--gd-max-width-prose);
+  padding: var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+  background: var(--gd-paper-sunken);
+  border-radius: var(--gd-radius);
+}
+
+.h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-2);
+  margin-bottom: var(--gd-space-3);
+  font-size: var(--gd-text-xl);
+}
+
+.h2Mark {
+  color: var(--gd-accent);
+}
+
+.badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--gd-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.badge {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-1);
+  padding: var(--gd-space-4);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius);
+}
+
+.badgeLabel {
+  font-weight: 700;
+}
+
+.badgeBody {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.emptyBadges {
+  padding: var(--gd-space-5);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-faint);
+  text-align: center;
+  border: 1px dashed var(--gd-rule-strong);
+  border-radius: var(--gd-radius-lg);
+}
+
+.gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gd-space-3);
+  padding-block: var(--gd-space-9);
+  text-align: center;
+}
+
+.gateMark {
+  color: var(--gd-ink-faint);
+}
+
+.gateTitle {
+  font-size: var(--gd-text-xl);
+}
+
+.gateBody {
+  color: var(--gd-ink-muted);
+}
+
+.gateLink {
+  font-weight: 700;
+  color: var(--gd-accent);
+}
+
+.gateLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 560px) {
+  .identity {
+    flex-direction: column;
+    gap: var(--gd-space-3);
+  }
+}

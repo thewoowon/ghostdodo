@@ -35,6 +35,26 @@ asserts the reporter id appears nowhere in the correction flow.
 
 Directory imports establish that a company *exists*. Only qualified applicant
 reports establish how it *behaves*. `TestImportCreatesNoMetrics` guards it.
+The same rule covers job postings — a posting says a company is hiring and
+nothing more (`TestPostingsCreateNoMetrics`).
+
+**Standing is never awarded for what a report said.** This governs the
+award table, the rank thresholds, *and* the badge rules in
+`reputation/badges.py` — a badge keyed on silence found or companies accused
+would reintroduce the asymmetry through a side door. `TestBadgeRulesReward
+ContributionNotNegativity` guards it, and there is deliberately no streak
+badge (docs/07 §4 warns about dark patterns in the same line it suggests one).
+
+**Two sign-in providers, one account.** Google and the magic link both
+resolve to one `users` row. Google matches `google_sub` first and verified
+email second — never email alone, and never an unverified one. A change that
+lets an unverified address reach `sign_in_with_google` is an account-takeover
+bug, not a validation nit.
+
+**Counting an apply click must never block the apply.** `지원하러 가기` is a
+real anchor to the employer; the outbound-click POST rides alongside the
+navigation and its failure is swallowed. Never convert it into a redirect
+through the API or an `await` in front of the link.
 
 ---
 
@@ -80,6 +100,34 @@ times, so intra-batch duplicates are the common case, not an edge case.
 **pnpm 11 reads the native-build allowlist from `allowBuilds:` in
 `pnpm-workspace.yaml`**, not from `.npmrc` or `package.json`.
 
+**A stored URL reaching an `href` needs its scheme checked.** Posting URLs
+come from importers and moderators, not from the renderer. `safe_apply_url()`
+returns None for anything but http(s), and the client renders no CTA rather
+than a `javascript:` link.
+
+**`dev_token` is development and test only** (`settings.expose_dev_tokens`).
+It hands back a working sign-in for any address typed, so gating it on
+`is_production` — as it once was — left staging with an authentication
+bypass. `check_production_hardening` refuses to boot if it is ever widened.
+
+**Feature flags are read once, at import.** `--reload` does not watch `.env`,
+so flipping `ENABLE_JOBS` needs an actual API restart, not a code edit.
+
+**The session cookie is set by the API's origin, and the web app reads it
+because cookies ignore ports.** That is why `localhost:3000` sees a cookie
+from `localhost:8000`. It will NOT hold across different hosts in production
+— api.example.com cannot set a host-only cookie the www origin can read.
+
+**Sign-in calls must be made by the browser, never by a Server Component.**
+The session arrives as `Set-Cookie` on the API's response; a fetch issued
+from the Next server would attach it to the server. `/auth/verify` is a
+client component for exactly this reason, and its path is part of the API's
+contract — `auth/service.py` builds the emailed link from it.
+
+**The magic-link route is single-use and effects mount twice in dev.**
+`MagicLinkVerifier` guards with a ref; without it strict mode burns the token
+on the first run and reports "already used" on the second.
+
 ---
 
 ## Test harness notes
@@ -92,6 +140,11 @@ times, so intra-batch duplicates are the common case, not an edge case.
   fixture get this free via the app lifespan.
 - `_reset_rate_limits` is pulled in by `client`, not autouse — an autouse async
   fixture breaks the synchronous metric unit tests.
+- `fresh_redis` is the Redis counterpart to `fresh_db`, and the same rule
+  applies: a test that touches Redis *directly* (OAuth state, rate limits)
+  must request it. Otherwise the next Redis-touching test dies inside
+  `_reset_rate_limits`, which makes it look like a rate-limit bug rather than
+  a leaked connection.
 - Web tests mock `fetch`; there is no test server.
 
 ---
@@ -116,6 +169,14 @@ reputation ledger, and metric recompute all commit together or none do.
 
 ## Current state
 
+**Deployment is the next session's work, and none of it exists yet** — no
+Dockerfile, no hosting config, no deploy job, no production data stores. See
+`docs/NEXT_SESSION.md`, which starts from the one decision the rest depends
+on: the production hostname layout, because the session cookie is host-only
+and `SameSite=Lax`.
+
+
+
 The public launch gate (`docs/handoff/docs/08_TRUST_SAFETY_LEGAL.md` §11) is
 closed except for **Korean legal review of the privacy policy and terms**. That
 is the remaining blocker before real-company metrics can go public, and it is
@@ -125,7 +186,24 @@ Real company data has **not** been imported yet — this is deliberate, pending
 that review. Development runs on fictional fixtures (`pnpm api:seed`), all
 flagged `is_demo` and labelled `샘플 데이터` in the UI.
 
-Not built yet: community, jobs and outbound tracking, the application tracker,
+Phase 4 is now visible: `/me` renders rank, both ledgers, and badges from
+the engine that was already running. `pnpm api:seed` awards standing through
+the real `reputation_service.award` path rather than inserting ledger rows,
+so ranks and badges are exercised in development.
+
+Sign-in works end to end on the web: `/sign-in` (Google + magic link),
+`/auth/verify`, `/me/reports`, and session state in the header. Google is
+dark until `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set — the sign-in
+page asks `/auth/providers` and hides the button rather than offering one
+that fails.
+
+Jobs shipped with `ENABLE_JOBS=true`: `/jobs`, `/jobs/[jobId]`, and
+`/companies/[slug]/jobs`, plus the outbound apply deep link. Demo postings
+are seeded onto the fictional companies with `example.com` URLs, one of them
+already expired so the closed-posting path stays visible.
+
+Not built yet: saved jobs (the remaining half of docs/09 Phase 6 — it needs a
+`saved_jobs` table and a migration), community, the application tracker,
 company claim verification, `/dex` leaderboards (intentionally closed until
 enough companies clear the sample bar), and share cards.
 

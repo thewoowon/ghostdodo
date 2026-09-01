@@ -61,6 +61,46 @@ export type CompanyMetrics = {
   computed_at: string | null;
 };
 
+/** Cursor page. `next_cursor` is null on the last page. */
+export type Paged<T> = {
+  items: T[];
+  next_cursor: string | null;
+};
+
+/**
+ * A linked job posting.
+ *
+ * Deliberately carries no rate. A posting says a company is hiring; only
+ * qualified reports say how it answers, so a card can never imply a number
+ * the sample cannot support.
+ */
+export type JobCard = {
+  id: string;
+  title: string;
+  role_category: RoleCategory | null;
+  employment_type: EmploymentType | null;
+  location: string | null;
+  source: ApplicationSource;
+  /** The board's own name when the importer recorded one. */
+  source_label: string | null;
+  closes_on: string | null;
+  is_open: boolean;
+  observed_at: string;
+  /** Null when the stored URL is not a linkable http(s) address — the card
+   *  then renders without an apply CTA rather than with a dead link. */
+  apply_url: string | null;
+  company: CompanySummary;
+};
+
+export type JobDetail = JobCard & {
+  last_checked_at: string | null;
+};
+
+export type OutboundClickAccepted = {
+  apply_url: string;
+  recorded: boolean;
+};
+
 /** Public report card. Deliberately has no reporter field. */
 export type PublicReportCard = {
   id: string;
@@ -84,6 +124,49 @@ export type OwnReport = PublicReportCard & {
   submitted_at: string | null;
   created_at: string;
   evidence_count: number;
+};
+
+export type AuthProviders = {
+  /** False until Google credentials are configured on the API. The sign-in
+   *  page renders its button from this, never from its own env, so a
+   *  misconfigured API cannot produce a button that leads nowhere. */
+  google: boolean;
+  magic_link: boolean;
+};
+
+export type SignInAccepted = {
+  message: string;
+  /** Returned outside production so local development needs no mail server. */
+  dev_token: string | null;
+};
+
+export type EarnedBadge = {
+  code: string;
+  /** Labelled by the API, so a new badge needs no front-end deploy. */
+  label: string;
+  description: string;
+};
+
+export type Profile = {
+  id: string;
+  handle: string;
+  role: string;
+  rank: string;
+  reputation_score: number;
+  credit_balance: number;
+  verified_contribution_count: number;
+  trust_state: string;
+  badges: EarnedBadge[];
+  created_at: string;
+};
+
+/** One append-only ledger line. Reputation and credit share the shape. */
+export type LedgerEntry = {
+  id: string;
+  event_type: string;
+  delta: number;
+  balance_after: number;
+  created_at: string;
 };
 
 export type SessionUser = {

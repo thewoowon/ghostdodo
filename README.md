@@ -137,6 +137,65 @@ split and every fragment stays under the publishable bar forever.
 
 ---
 
+## Reputation
+
+Standing is earned by complete, verifiable contribution — never by what a
+report said about a company. The award amounts are identical whether a
+company answered in three days or never; `badges.py` follows the same rule,
+and higher ranks additionally require demonstrated accuracy rather than raw
+points. `/me` shows the rank, both append-only ledgers, and badges, with
+every line carrying its own delta and resulting balance.
+
+Dodo Credit is product utility, never currency. Nothing in the UI describes
+it in monetary terms, and a test asserts the copy stays that way.
+
+## Sign-in
+
+Two providers, one account. **Google** (server-side authorization code flow)
+and the original **email magic link** both resolve to the same `users` row on
+a verified address, so a contributor who switches keeps their reports,
+reputation, and handle. There is no separate signup step — the first sign-in
+creates the account and assigns a pseudonymous handle.
+
+Google is matched on the stable `sub` first and the verified email second.
+Matching on email alone would hand an account to whoever inherits an old
+address; `email_verified` is required, or one account could assert another's
+address.
+
+Google stays off until credentials exist. `GET /auth/providers` reports what
+the API can actually complete, and the sign-in page renders its button from
+that answer rather than from its own env — so the page can never offer a
+button that leads nowhere. Without credentials the magic link still works.
+
+```bash
+# https://console.cloud.google.com/apis/credentials → OAuth client (Web)
+# Authorized redirect URI: http://localhost:8000/api/v1/auth/google/callback
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+Locally, `EMAIL_PROVIDER=console` prints the magic link to the API log, and
+the sign-in page offers a direct link from the `dev_token` the API returns
+outside production.
+
+## Jobs
+
+`/jobs` lists linked postings; `/companies/[slug]/jobs` is one company's tab.
+GhostDodo never hosts an application — `지원하러 가기` is a real anchor to the
+employer or job board, and the click is counted alongside the navigation
+rather than in front of it, so accounting can never be what stops someone
+from applying.
+
+A posting establishes that a company is hiring. It says nothing about how
+that company answers, so **no posting feeds a metric** — the same rule the
+directory importer lives under, asserted by `TestPostingsCreateNoMetrics`.
+The job page puts the company's response record above the apply button,
+suppression and sample size included.
+
+Postings sit behind `ENABLE_JOBS`. Expiry is derived from `is_active` and
+`closes_on` rather than swept: a closed posting drops out of listings but
+still resolves by id, so a shared link explains itself instead of 404ing.
+
 ## Public launch gate
 
 docs/08 §11 lists what must work before real-company metrics go public:
@@ -158,13 +217,13 @@ The last row is the remaining blocker, and it is not an engineering task.
 ## Status
 
 Built and verified: monorepo, infra, the schema with migrations, the metric
-engine, auth, reports, private evidence, moderation console, correction and
-dispute resolution, reputation ledgers, the company directory importers, the
-brand SVG system, and the public pages including the report wizard.
+engine, Google and magic-link sign-in with the web surface for both, reports, private evidence, moderation console, correction and
+dispute resolution, reputation ledgers, the company directory importers,
+linked job postings with the outbound apply deep link, the brand SVG system,
+and the public pages including the report wizard.
 
-Not yet built: community, jobs and outbound tracking, the application
-tracker, company claim verification, `/dex` leaderboards (intentionally
-closed until enough companies clear the sample bar), and share card
-generation.
+Not yet built: saved jobs, community, the application tracker, company claim
+verification, `/dex` leaderboards (intentionally closed until enough
+companies clear the sample bar), and share card generation.
 
 See [`docs/handoff/docs/09_ROADMAP_ACCEPTANCE.md`](docs/handoff/docs/09_ROADMAP_ACCEPTANCE.md).

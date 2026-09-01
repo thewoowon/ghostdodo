@@ -13,10 +13,20 @@ from app.modules.companies.schemas import CompanySummary
 from app.modules.evidence.models import Evidence
 from app.modules.reports.models import RecruitmentExperience
 from app.modules.reports.schemas import OwnReport
+from app.modules.reputation import badges as badge_rules
 from app.modules.reputation.models import CreditLedger, ReputationEvent, UserBadge
 from app.modules.users.models import SavedCompany
 
 router = APIRouter(prefix="/me", tags=["me"])
+
+
+class EarnedBadge(BaseModel):
+    """Rendered by the client as-is. The label lives here rather than in the
+    web bundle so a new badge does not need a front-end deploy."""
+
+    code: str
+    label: str
+    description: str
 
 
 class Profile(BaseModel):
@@ -28,7 +38,7 @@ class Profile(BaseModel):
     credit_balance: int
     verified_contribution_count: int
     trust_state: str
-    badges: list[str]
+    badges: list[EarnedBadge]
     created_at: str
 
 
@@ -42,7 +52,7 @@ class LedgerEntry(BaseModel):
 
 @router.get("", response_model=Profile)
 async def profile(db: DbSession, user: CurrentUser) -> Profile:
-    badges = (
+    held = (
         (
             await db.execute(
                 select(UserBadge.badge_code).where(
@@ -53,6 +63,13 @@ async def profile(db: DbSession, user: CurrentUser) -> Profile:
         .scalars()
         .all()
     )
+    # Rendered in the canonical order, not award order, so a profile does not
+    # reshuffle as badges arrive. Unknown codes are dropped rather than shown
+    # as a bare identifier.
+    earned = [
+        EarnedBadge(code=rule.code, label=rule.label, description=rule.description)
+        for rule in badge_rules.labels(list(held))
+    ]
     return Profile(
         id=user.id,
         handle=user.handle,
@@ -62,7 +79,7 @@ async def profile(db: DbSession, user: CurrentUser) -> Profile:
         credit_balance=user.credit_balance,
         verified_contribution_count=user.verified_contribution_count,
         trust_state=user.trust_state.value,
-        badges=list(badges),
+        badges=earned,
         created_at=user.created_at.isoformat(),
     )
 

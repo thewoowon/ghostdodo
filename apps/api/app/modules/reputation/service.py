@@ -19,6 +19,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modules.reputation import badges
 from app.modules.reputation.models import CreditLedger, ReputationEvent
 from app.modules.users.models import User
 from app.shared.enums import CreditEventType, ReputationEventType, ReputationRank
@@ -139,6 +140,12 @@ async def award(
         # Lost a race against a concurrent award of the same dedupe key.
         await session.rollback()
         return None
+
+    # In the same transaction as the ledger rows that earned it: a badge must
+    # not survive an award that gets rolled back. Callers increment
+    # `verified_contribution_count` before awarding, so the count-based rules
+    # already see this contribution.
+    await badges.evaluate(session, user=user)
     return event
 
 

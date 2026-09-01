@@ -1,0 +1,31 @@
+.crest {
+  flex: none;
+}
+
+.ring {
+  fill: none;
+  stroke: var(--gd-rule-strong);
+  stroke-width: 1.5;
+}
+
+.field {
+  fill: var(--gd-accent-soft);
+}
+
+.quill {
+  fill: var(--gd-accent);
+}
+
+.quillStem {
+  stroke: var(--gd-accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+.tickOn {
+  fill: var(--gd-accent);
+}
+
+.tickOff {
+  fill: var(--gd-rule-strong);
+}

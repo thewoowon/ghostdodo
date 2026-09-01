@@ -4,7 +4,7 @@ import uuid
 from collections.abc import AsyncIterator
 
 import pytest
-from app.core.redis import get_redis
+from app.core.redis import close_redis, get_redis
 from app.db.session import SessionLocal, dispose_engine
 from app.main import app
 from app.modules.companies.models import Company
@@ -46,6 +46,21 @@ async def fresh_db() -> AsyncIterator[None]:
     """
     yield
     await dispose_engine()
+
+
+@pytest.fixture
+async def fresh_redis() -> AsyncIterator[None]:
+    """Closes the shared Redis client after a test that used it directly.
+
+    The same hazard `fresh_db` exists for: a Redis connection is bound to the
+    event loop that opened it, and pytest-asyncio gives each test its own
+    loop. Without this the next test to touch Redis picks the pooled
+    connection off a closed loop and dies with "Event loop is closed" — from
+    `_reset_rate_limits`, which makes it look like a rate-limit problem.
+    Tests going through `client` get this free from the app lifespan.
+    """
+    yield
+    await close_redis()
 
 
 @pytest.fixture

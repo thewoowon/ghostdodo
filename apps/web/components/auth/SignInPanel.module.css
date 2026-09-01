@@ -1,0 +1,143 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-4);
+  padding: var(--gd-space-6);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+  box-shadow: var(--gd-shadow-card);
+}
+
+.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gd-space-3);
+  padding: var(--gd-space-3) var(--gd-space-5);
+  font-weight: 700;
+  color: var(--gd-ink);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius-pill);
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.google:hover {
+  background: var(--gd-paper-sunken);
+  border-color: var(--gd-ink-faint);
+}
+
+/* Until /auth/providers answers, the button is shown but not yet promised. */
+.googlePending {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-3);
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--gd-rule);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-2);
+}
+
+.label {
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+}
+
+.emailRow {
+  display: flex;
+  gap: var(--gd-space-2);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--gd-space-3) var(--gd-space-4);
+  background: var(--gd-paper);
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--gd-accent);
+}
+
+.submit {
+  flex: none;
+  padding: var(--gd-space-3) var(--gd-space-5);
+  font-weight: 700;
+  color: var(--gd-accent-ink);
+  background: var(--gd-accent);
+  border: 0;
+  border-radius: var(--gd-radius);
+  cursor: pointer;
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--gd-accent-hover);
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.hint {
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.sent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-2);
+  padding: var(--gd-space-4);
+  background: var(--gd-accent-soft);
+  border-radius: var(--gd-radius);
+}
+
+.sentTitle {
+  font-weight: 700;
+}
+
+.sentBody {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+}
+
+.devLink {
+  margin-top: var(--gd-space-2);
+  font-size: var(--gd-text-sm);
+  font-weight: 700;
+  color: var(--gd-accent);
+}
+
+.devLink:hover {
+  text-decoration: underline;
+}
+
+.error {
+  padding: var(--gd-space-3) var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-extinct);
+  background: var(--gd-extinct-soft);
+  border-radius: var(--gd-radius);
+}

@@ -49,6 +49,11 @@ class ReportNotFoundError(NotFoundError):
     message = "해당 기록을 찾을 수 없습니다."
 
 
+class JobNotFoundError(NotFoundError):
+    code = "JOB_NOT_FOUND"
+    message = "해당 공고를 찾을 수 없습니다."
+
+
 class UnauthorizedError(AppError):
     status_code = 401
     code = "UNAUTHORIZED"
@@ -59,6 +64,24 @@ class ForbiddenError(AppError):
     status_code = 403
     code = "FORBIDDEN"
     message = "권한이 없습니다."
+
+
+class AuthProviderError(AppError):
+    """Any failure inside an external sign-in flow.
+
+    One message for every cause — a bad state, a replayed code, a token for
+    another client — so a probe cannot map the flow's internals.
+    """
+
+    status_code = 401
+    code = "AUTH_PROVIDER_FAILED"
+    message = "로그인을 완료하지 못했습니다. 다시 시도해 주세요."
+
+
+class AuthProviderUnavailableError(AppError):
+    status_code = 503
+    code = "AUTH_PROVIDER_UNAVAILABLE"
+    message = "구글 로그인이 아직 설정되지 않았습니다."
 
 
 class ValidationError(AppError):

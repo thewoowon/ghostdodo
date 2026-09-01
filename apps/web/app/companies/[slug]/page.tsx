@@ -2,16 +2,23 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { DodoEgg, FootprintMark, TimelineBone } from "@/components/brand/svg/marks";
+import {
+  DodoEgg,
+  FieldNotebook,
+  FootprintMark,
+  TimelineBone,
+} from "@/components/brand/svg/marks";
 import { CorrectionForm } from "@/components/company/CorrectionForm";
 import { MetricCard } from "@/components/company/MetricCard";
 import { StageBreakdown } from "@/components/company/StageBreakdown";
 import { ReportCardList } from "@/components/company/ReportCardList";
 import { VerdictBadge } from "@/components/company/VerdictBadge";
+import { JobCardList } from "@/components/jobs/JobCardList";
 import { decodeRouteParam } from "@/lib/route-params";
 import { load } from "@/lib/api/load";
 import {
   getCompany,
+  getCompanyJobs,
   getCompanyMetrics,
   getCompanyReports,
 } from "@/lib/api/queries";
@@ -86,6 +93,12 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   }
 
   const [company, metrics, reports] = result.data;
+
+  // Fetched apart from the block above, and allowed to fail on its own: jobs
+  // sit behind a feature flag, and a closed or unhealthy jobs surface must
+  // not take down the page that holds the response record.
+  const jobsResult = await load(() => getCompanyJobs(company.slug, { limit: 3 }));
+  const jobs = jobsResult.ok ? jobsResult.data.items : [];
 
   const verdict = responseVerdict(metrics.response_rate, metrics.eligibility);
   const windowLabel = WINDOW_LABELS[window];
@@ -195,6 +208,21 @@ export default async function CompanyPage({ params, searchParams }: Props) {
         </h2>
         <StageBreakdown stages={metrics.stage_breakdown} />
       </section>
+
+      {jobs.length > 0 && (
+        <section aria-label="채용공고">
+          <div className={styles.jobsHead}>
+            <h2 className={styles.h2}>
+              <FieldNotebook size={20} className={styles.h2Mark} />
+              지금 열려 있는 공고
+            </h2>
+            <Link href={`/companies/${company.slug}/jobs`} className={styles.jobsLink}>
+              전체 공고 보기
+            </Link>
+          </div>
+          <JobCardList jobs={jobs} showCompany={false} />
+        </section>
+      )}
 
       <section aria-label="최근 관측 기록">
         <h2 className={styles.h2}>
