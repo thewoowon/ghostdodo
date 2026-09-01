@@ -23,7 +23,7 @@ export function SiteFooter() {
         </nav>
 
         <p className={styles.note}>
-          GhostDodo는 채용 커뮤니케이션 기록 데이터베이스입니다. 특정 기업이나
+          고스트도도는 채용 커뮤니케이션 기록 데이터베이스입니다. 특정 기업이나
           개인을 비방하기 위한 서비스가 아니며, 모든 지표는 표본 수와 기간을
           함께 표시합니다.
         </p>

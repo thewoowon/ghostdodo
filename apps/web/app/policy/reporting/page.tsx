@@ -12,7 +12,7 @@ export default function ReportingPolicyPage() {
   return (
     <PolicyPage
       title="기록 정책"
-      lede="GhostDodo는 감정이 아니라 사건을 기록합니다. 아래 원칙은 서비스 설계와 검토 기준 모두에 동일하게 적용됩니다."
+      lede="고스트도도는 감정이 아니라 사건을 기록합니다. 아래 원칙은 서비스 설계와 검토 기준 모두에 동일하게 적용됩니다."
     >
       <section>
         <h2>기록할 수 있는 것</h2>

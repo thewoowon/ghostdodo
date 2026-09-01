@@ -6,7 +6,7 @@ import { DodoEgg, FossilMark, ResponseSignal } from "@/components/brand/svg/mark
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
-  title: "GhostDodo 도감",
+  title: "고스트도도 도감",
   description: "관측된 회사들의 채용 응답 패턴을 둘러보세요.",
   alternates: { canonical: "/dex" },
 };
@@ -28,7 +28,7 @@ export default function DexPage() {
   return (
     <div className={`gd-shell ${styles.page}`}>
       <header className={styles.header}>
-        <h1 className={styles.title}>GhostDodo 도감</h1>
+        <h1 className={styles.title}>고스트도도 도감</h1>
         <p className={styles.lede}>
           관측된 회사들의 채용 응답 패턴을 분류해 둘러보는 곳입니다.
         </p>

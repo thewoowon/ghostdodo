@@ -105,7 +105,7 @@ export default async function MethodologyPage() {
         <p className={styles.body}>
           결과 통보율은 <strong>명시적인 결과를 전달받은 비율</strong>입니다.
           합격이든 불합격이든, 회사가 지원자에게 결과를 알렸다면 성실한 응답으로
-          계산합니다. GhostDodo는 채용 결과가 아니라 채용 커뮤니케이션을
+          계산합니다. 고스트도도는 채용 결과가 아니라 채용 커뮤니케이션을
           측정합니다.
         </p>
       </section>

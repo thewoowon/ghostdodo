@@ -25,7 +25,7 @@ export default function PrivacyPolicyPage() {
   return (
     <PolicyPage
       title="개인정보처리방침"
-      lede="GhostDodo는 채용 커뮤니케이션 기록을 다루는 서비스로서, 목적에 필요한 최소한의 정보만 수집합니다."
+      lede="고스트도도는 채용 커뮤니케이션 기록을 다루는 서비스로서, 목적에 필요한 최소한의 정보만 수집합니다."
     >
       <section>
         <h2>수집하는 항목</h2>

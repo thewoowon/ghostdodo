@@ -34,3 +34,6 @@ htmlcov/
 
 # local data
 infra/data/
+
+# claude
+.claude/
