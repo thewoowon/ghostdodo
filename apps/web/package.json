@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "icons:generate": "node --experimental-strip-types scripts/generate-app-icons.mjs"
   },
   "dependencies": {
     "next": "16.3.3",
