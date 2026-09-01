@@ -176,7 +176,10 @@ GOOGLE_CLIENT_SECRET=...
 
 Locally, `EMAIL_PROVIDER=console` prints the magic link to the API log, and
 the sign-in page offers a direct link from the `dev_token` the API returns
-outside production.
+outside production. Neither survives a deployment: `console` writes a working
+sign-in to the log, so production refuses to boot with it, and `dev_token` is
+gated on `expose_dev_tokens` — development and test only, staging included in
+the refusal.
 
 ## Jobs
 
@@ -195,6 +198,27 @@ suppression and sample size included.
 Postings sit behind `ENABLE_JOBS`. Expiry is derived from `is_active` and
 `closes_on` rather than swept: a closed posting drops out of listings but
 still resolves by id, so a shared link explains itself instead of 404ing.
+
+## Deployment
+
+One public origin. `ghostdodo.com` is served by Vercel, and `/api/v1/*` is
+rewritten to the API on Railway — so the session cookie stays host-only and
+same-site, and there is no CORS or CSRF story to maintain. Evidence lives in
+a private S3 bucket, reachable only through signed URLs.
+
+The API ships as a container (`apps/api/Dockerfile`); `railway.json` runs
+`alembic upgrade head` before the new one takes traffic. Both deploys are
+driven from CI so nothing ships that the test jobs have not gone green on.
+
+Everything above is in the repository. The account work — bucket, mail
+domain, projects, DNS, OAuth redirect URI — is a step-by-step runbook in
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+```bash
+docker build -t ghostdodo-api apps/api    # what Railway builds
+```
+
+---
 
 ## Public launch gate
 

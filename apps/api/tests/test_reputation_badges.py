@@ -214,8 +214,11 @@ class TestDevTokenExposure:
         production = Settings(
             app_env="production",
             auth_secret="k" * 48,
+            app_base_url="https://ghostdodo.com",
             web_base_url="https://ghostdodo.com",
             s3_secret_key="a-real-secret",  # noqa: S106 - fixture, not a credential
+            email_provider="resend",
+            resend_api_key="re_not_a_real_key",
         )
         # The property is derived, so this passes today; the assertion pins
         # the hardening check to it, so widening the property later fails

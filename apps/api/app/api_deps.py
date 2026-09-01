@@ -57,11 +57,29 @@ async def get_admin(user: Annotated[User, Depends(get_current_user)]) -> User:
 
 
 def client_ip(request: Request) -> str | None:
-    """Trusts the leftmost X-Forwarded-For hop. Behind a proxy that appends
-    rather than replaces, configure the proxy to strip inbound values."""
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
+    """The caller's address, counted from the *right* of X-Forwarded-For.
+
+    The leftmost entry is whatever the caller sent, so trusting it lets
+    anyone choose their own rate-limit bucket — or someone else's. Only the
+    entries appended by our own proxies are trustworthy, and there are
+    exactly `trusted_proxy_hops` of them, so the caller sits at that offset
+    from the end.
+
+    With no proxies configured (development, tests) the header is ignored
+    entirely and the socket peer is used. The container therefore runs
+    uvicorn *without* `--proxy-headers`: every forwarding decision is made
+    here, where the hop count is known.
+    """
+    hops = settings.trusted_proxy_hops
+    if hops > 0:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            chain = [part.strip() for part in forwarded.split(",") if part.strip()]
+            # A chain shorter than the configured hop count means the request
+            # did not come through the expected proxies. Fall through to the
+            # peer rather than believe a value we cannot place.
+            if len(chain) >= hops:
+                return chain[-hops]
     return request.client.host if request.client else None
 
 

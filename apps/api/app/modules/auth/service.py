@@ -11,17 +11,19 @@ from __future__ import annotations
 import re
 import secrets
 from datetime import UTC, datetime
+from html import escape
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.email import EmailDeliveryError, send_email
 from app.core.logging import get_logger
 from app.core.security import hash_token, magic_link_expiry, new_token
 from app.modules.auth.google import GoogleProfile
 from app.modules.users.models import MagicLinkToken, User
 from app.shared.enums import TrustState, UserRole
-from app.shared.errors import UnauthorizedError
+from app.shared.errors import EmailDeliveryFailedError, UnauthorizedError
 
 log = get_logger(__name__)
 
@@ -86,13 +88,52 @@ async def consume_magic_link(session: AsyncSession, *, token: str) -> User:
     return user
 
 
+_MAGIC_LINK_SUBJECT = "GhostDodo 로그인 링크"
+
+
+def _magic_link_body(link: str) -> tuple[str, str]:
+    """Plain text and HTML for the same message.
+
+    The path is `/auth/verify` because that is what `MagicLinkVerifier`
+    listens on — the emailed link is part of the web app's route contract,
+    not a detail this module is free to change.
+    """
+    minutes = max(1, settings.magic_link_ttl_seconds // 60)
+    text = (
+        "아래 주소로 로그인하세요.\n\n"
+        f"{link}\n\n"
+        f"이 링크는 {minutes}분 뒤 만료되며 한 번만 사용할 수 있습니다.\n"
+        "요청한 적이 없다면 이 메일은 무시하셔도 됩니다."
+    )
+    safe = escape(link, quote=True)
+    html = (
+        '<div style="font-family:system-ui,-apple-system,sans-serif;'
+        'font-size:15px;line-height:1.7;color:#1a1a1a">'
+        "<p>아래 주소로 로그인하세요.</p>"
+        f'<p><a href="{safe}">{safe}</a></p>'
+        f"<p>이 링크는 {minutes}분 뒤 만료되며 한 번만 사용할 수 있습니다.<br>"
+        "요청한 적이 없다면 이 메일은 무시하셔도 됩니다.</p>"
+        "</div>"
+    )
+    return text, html
+
+
 async def deliver_magic_link(email: str, token: str) -> None:
-    """Development delivery. A real provider is wired in via EMAIL_PROVIDER."""
+    """Sends the sign-in link through whichever provider is configured.
+
+    A delivery failure is raised, not logged and swallowed: the caller
+    answers 202 ("check your mail"), and that answer must not be given for a
+    mail that was never accepted.
+    """
     link = f"{settings.web_base_url}/auth/verify?token={token}"
-    if settings.email_provider == "console":
-        log.info("auth.magic_link.console", email=email, link=link)
-        return
-    raise NotImplementedError(f"EMAIL_PROVIDER '{settings.email_provider}' is not configured")
+    text, html = _magic_link_body(link)
+    try:
+        await send_email(to=email, subject=_MAGIC_LINK_SUBJECT, text=text, html=html)
+    except EmailDeliveryError as exc:
+        # The address never reaches the log line — a failed send is not a
+        # reason to write down who was trying to sign in.
+        log.warning("auth.magic_link.undelivered", reason=str(exc))
+        raise EmailDeliveryFailedError from exc
 
 
 async def sign_in_with_google(session: AsyncSession, *, profile: GoogleProfile) -> User:

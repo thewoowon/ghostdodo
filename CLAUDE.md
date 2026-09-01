@@ -115,8 +115,36 @@ so flipping `ENABLE_JOBS` needs an actual API restart, not a code edit.
 
 **The session cookie is set by the API's origin, and the web app reads it
 because cookies ignore ports.** That is why `localhost:3000` sees a cookie
-from `localhost:8000`. It will NOT hold across different hosts in production
-— api.example.com cannot set a host-only cookie the www origin can read.
+from `localhost:8000`. It would NOT hold across different hosts, which is why
+production serves one origin: Vercel rewrites `/api/v1/*` on ghostdodo.com to
+the API on Railway, so the cookie the API sets is a cookie for the site. A
+change that gives the API its own public hostname reintroduces the problem
+and takes CORS and CSRF with it. See `docs/DEPLOYMENT.md`.
+
+**`X-Forwarded-For` is read from the right, not the left.** The leftmost
+entry is whatever the caller sent, so trusting it lets anyone pick their own
+rate-limit bucket — or someone else's. `client_ip` counts
+`TRUSTED_PROXY_HOPS` entries back from the end (2 in production: Vercel,
+then Railway's edge). The container runs uvicorn *without* `--proxy-headers`
+so there is exactly one place that decides this. Get the number wrong and
+nothing visibly breaks: the site just shares one bucket.
+
+**`EMAIL_PROVIDER=console` writes a working sign-in to the log.** Same class
+of problem as `dev_token`, and `check_production_hardening` refuses to boot
+on it. A failed magic-link send raises rather than being swallowed — a 202
+means "check your mail", and it must not be the answer to a mail the
+provider refused.
+
+**Managed Postgres hands out `postgresql://`, and this engine is async.**
+The settings layer rewrites the scheme to `postgresql+asyncpg://`; without
+that, SQLAlchemy reaches for psycopg2, which is not installed, and the app
+dies at import with an error that names nothing relevant. An explicit sync
+driver is refused rather than rewritten.
+
+**Cloudflare R2 cannot host evidence.** Its S3 API does not implement `POST
+Object`, and `create_upload_url` uses a presigned POST so the *bucket*
+rejects an oversize upload before the bytes land. Any S3-compatible
+alternative needs that box ticked before it is chosen.
 
 **Sign-in calls must be made by the browser, never by a Server Component.**
 The session arrives as `Set-Cookie` on the API's response; a fetch issued
@@ -169,13 +197,17 @@ reputation ledger, and metric recompute all commit together or none do.
 
 ## Current state
 
-**Deployment is the next session's work, and none of it exists yet** — no
-Dockerfile, no hosting config, no deploy job, no production data stores. See
-`docs/NEXT_SESSION.md`, which starts from the one decision the rest depends
-on: the production hostname layout, because the session cookie is host-only
-and `SameSite=Lax`.
+**Deployment is built but not yet run.** The code side is done: an API
+Dockerfile, `railway.json` (Dockerfile build, `/health/ready` check,
+`alembic upgrade head` as the pre-deploy command), `apps/web/vercel.json`,
+the `/api/v1` rewrite in `next.config.ts`, and CI-gated deploy jobs for both.
+What is left is account work — the S3 bucket, the Resend domain, the two
+projects, DNS — and it is written up step by step in `docs/DEPLOYMENT.md`.
 
-
+The layout is **one origin**: ghostdodo.com on Vercel, `/api/v1/*` rewritten
+to the API on Railway. That is what keeps the session cookie host-only and
+same-site, and it is the reason `NEXT_PUBLIC_API_BASE_URL` is a relative
+path in production while Server Components use `API_ORIGIN` directly.
 
 The public launch gate (`docs/handoff/docs/08_TRUST_SAFETY_LEGAL.md` §11) is
 closed except for **Korean legal review of the privacy policy and terms**. That
@@ -195,7 +227,9 @@ Sign-in works end to end on the web: `/sign-in` (Google + magic link),
 `/auth/verify`, `/me/reports`, and session state in the header. Google is
 dark until `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set — the sign-in
 page asks `/auth/providers` and hides the button rather than offering one
-that fails.
+that fails. The magic link now has a real sender behind it: `EMAIL_PROVIDER`
+picks between `console` (dev) and `resend`, and `app/core/email.py` is the
+only place that knows how a message leaves.
 
 Jobs shipped with `ENABLE_JOBS=true`: `/jobs`, `/jobs/[jobId]`, and
 `/companies/[slug]/jobs`, plus the outbound apply deep link. Demo postings

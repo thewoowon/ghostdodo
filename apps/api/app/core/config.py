@@ -59,8 +59,22 @@ class Settings(BaseSettings):
     google_redirect_uri: str = ""
 
     sentry_dsn: str = ""
-    email_provider: str = "console"
-    email_from: str = "no-reply@ghostdodo.com"
+
+    # ── Email ─────────────────────────────────────────────────────
+    # "console" logs the magic link instead of sending it. That is a
+    # development affordance and an outright token leak anywhere else,
+    # so `check_production_hardening` refuses it in production.
+    email_provider: Literal["console", "resend"] = "console"
+    email_from: str = "GhostDodo <no-reply@ghostdodo.com>"
+    resend_api_key: str = ""
+
+    # ── Proxying ──────────────────────────────────────────────────
+    # How many proxies sit in front of this app and append to
+    # X-Forwarded-For. Every hop beyond this count is caller-supplied and
+    # must not be believed. 0 means "trust nothing, use the socket peer".
+    #
+    # Vercel rewrite -> Railway edge -> app is two hops.
+    trusted_proxy_hops: int = 0
 
     rate_limit_enabled: bool = True
 
@@ -98,9 +112,41 @@ class Settings(BaseSettings):
         )
 
     @property
+    def email_configured(self) -> bool:
+        """Whether a magic link can actually leave the building."""
+        if self.email_provider == "console":
+            return not self.is_production
+        return bool(self.resend_api_key)
+
+    @property
     def cors_origins(self) -> list[str]:
         """Strict CORS: only the known web origin. No wildcards, ever."""
         return [self.web_base_url]
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _require_async_driver(cls, v: object) -> object:
+        """Normalises the URL a managed Postgres hands out.
+
+        Railway (and Heroku, and most others) publish `postgresql://...`.
+        SQLAlchemy reads that as "use psycopg2", which is not installed, so
+        the app dies at import with a driver error that says nothing about
+        the real cause. The scheme is the only difference, so correct it —
+        and refuse any *other* driver rather than quietly rewriting it.
+        """
+        if not isinstance(v, str):
+            return v
+        scheme, separator, rest = v.partition("://")
+        if not separator:
+            return v
+        if scheme in ("postgres", "postgresql"):
+            return f"postgresql+asyncpg://{rest}"
+        if scheme != "postgresql+asyncpg":
+            raise ValueError(
+                f"DATABASE_URL must use the asyncpg driver, got '{scheme}'. "
+                "The engine is async; a sync driver cannot serve it."
+            )
+        return v
 
     @field_validator("auth_secret")
     @classmethod
@@ -126,6 +172,13 @@ class Settings(BaseSettings):
             problems.append("S3_SECRET_KEY is a placeholder")
         if self.web_base_url.startswith("http://"):
             problems.append("WEB_BASE_URL must be https in production")
+        if self.app_base_url.startswith("http://"):
+            problems.append("APP_BASE_URL must be https in production")
+        if self.email_provider == "console":
+            # Console delivery writes a working sign-in token to the log.
+            problems.append("EMAIL_PROVIDER=console leaks sign-in tokens to logs")
+        elif not self.email_configured:
+            problems.append(f"EMAIL_PROVIDER={self.email_provider} has no API key")
         if problems:
             raise RuntimeError("Refusing to start in production: " + "; ".join(problems))
 

@@ -8,7 +8,16 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Private user surfaces are never indexed (docs/04 §5).
-      disallow: ["/me", "/report", "/admin", "/company-portal", "/search"],
+      // `/api` is the API proxied onto this origin — a crawlable surface by
+      // accident of the single-origin layout, and never a page.
+      disallow: [
+        "/me",
+        "/report",
+        "/admin",
+        "/company-portal",
+        "/search",
+        "/api",
+      ],
     },
     sitemap: `${APP_URL}/sitemap.xml`,
   };

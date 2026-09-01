@@ -9,10 +9,34 @@ import type { ApiErrorBody } from "./types";
 
 const PUBLIC_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
-const INTERNAL_BASE = process.env.API_INTERNAL_BASE_URL ?? PUBLIC_BASE;
+
+/**
+ * In production the public base is the relative path `/api/v1`, which the
+ * Vercel rewrite forwards. A relative URL is meaningless to `fetch` on the
+ * server, so Server Components need an absolute one — and it may as well
+ * skip the proxy hop and address the API directly.
+ *
+ * `API_ORIGIN` already has to exist for the rewrite, so it is reused here
+ * rather than asking for the same host twice under two names.
+ */
+const INTERNAL_BASE = (() => {
+  if (process.env.API_INTERNAL_BASE_URL) return process.env.API_INTERNAL_BASE_URL;
+  if (PUBLIC_BASE.startsWith("/") && process.env.API_ORIGIN) {
+    return `${process.env.API_ORIGIN}${PUBLIC_BASE}`;
+  }
+  return PUBLIC_BASE;
+})();
 
 function baseUrl(): string {
-  return typeof window === "undefined" ? INTERNAL_BASE : PUBLIC_BASE;
+  if (typeof window !== "undefined") return PUBLIC_BASE;
+  if (INTERNAL_BASE.startsWith("/")) {
+    // Caught here rather than as fetch's opaque "Failed to parse URL".
+    throw new Error(
+      "Server-side API base is relative. Set API_ORIGIN (or API_INTERNAL_BASE_URL) " +
+        "to the API's absolute origin.",
+    );
+  }
+  return INTERNAL_BASE;
 }
 
 /**
@@ -87,9 +111,13 @@ export async function apiRequest<T>(
   if (cookie) headers["Cookie"] = cookie;
   if (idempotencyKey) headers["X-Idempotency-Key"] = idempotencyKey;
 
+  // Resolved outside the try: a misconfigured base is a deployment error,
+  // not an unreachable API, and must not be reported as one.
+  const url = `${baseUrl()}${path}`;
+
   let response: Response;
   try {
-    response = await fetch(`${baseUrl()}${path}`, {
+    response = await fetch(url, {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),

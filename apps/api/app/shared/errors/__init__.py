@@ -84,6 +84,19 @@ class AuthProviderUnavailableError(AppError):
     message = "구글 로그인이 아직 설정되지 않았습니다."
 
 
+class EmailDeliveryFailedError(AppError):
+    """The magic link could not be handed to the mail provider.
+
+    Reported as a failure rather than swallowed: a 202 here would tell the
+    user to go check an inbox that will never receive anything. It carries
+    no information about whether the address has an account.
+    """
+
+    status_code = 502
+    code = "EMAIL_DELIVERY_FAILED"
+    message = "로그인 링크를 보내지 못했습니다. 잠시 후 다시 시도해 주세요."
+
+
 class ValidationError(AppError):
     status_code = 422
     code = "VALIDATION_ERROR"
