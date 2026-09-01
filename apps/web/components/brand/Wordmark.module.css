@@ -1,0 +1,24 @@
+.wordmark {
+  /* Falls back to the UI stack if the display face has not loaded. The drawn
+     eyes stay metric-correct only for Bricolage Grotesque, so the fallback is
+     a graceful degradation, not a supported look. */
+  font-family: var(--gd-font-wordmark), var(--gd-font-sans);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+}
+
+.ghost {
+  font-weight: 400;
+}
+
+.dodo {
+  font-weight: 800;
+}
+
+.eye {
+  display: inline-block;
+  /* A replaced inline element sits on its bottom edge, so this drops the eye
+     by the glyph's 14/1000 em overshoot and lands it exactly where the font's
+     own `o` sits. */
+  vertical-align: -0.014em;
+}

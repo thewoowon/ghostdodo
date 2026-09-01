@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { SessionNav } from "@/components/auth/SessionNav";
 import { DodoMark } from "@/components/brand/svg/DodoMark";
+import { Wordmark } from "@/components/brand/Wordmark";
 
 import styles from "./SiteHeader.module.css";
 
@@ -13,7 +14,7 @@ export function SiteHeader() {
       <div className={`gd-shell ${styles.inner}`}>
         <Link href="/" className={styles.brand} aria-label="GhostDodo 홈">
           <DodoMark size={30} className={styles.mark} />
-          <span className={styles.wordmark}>GhostDodo</span>
+          <Wordmark className={styles.wordmark} />
         </Link>
 
         <nav className={styles.nav} aria-label="주요 메뉴">

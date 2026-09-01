@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Bricolage_Grotesque } from "next/font/google";
 
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -6,6 +7,22 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import "@/styles/globals.css";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+/**
+ * Display face for the wordmark only — body and UI text stay on Pretendard,
+ * which carries the Korean. Exposed as a CSS variable rather than a class so
+ * nothing inherits it by accident; `Wordmark` is the sole consumer.
+ *
+ * Variable font, so no `weight` list: the wordmark needs 400 and 800 and gets
+ * the whole range for one file. `next/font` self-hosts this at build time —
+ * the build fetches from Google once, so a fully offline build needs the
+ * Next font cache warm.
+ */
+const wordmark = Bricolage_Grotesque({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--gd-font-wordmark",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -35,7 +52,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={wordmark.variable}>
       <body>
         <a href="#main" className="gd-sr-only">
           본문으로 건너뛰기

@@ -26,10 +26,10 @@
   flex: none;
 }
 
+/* Weight and letter-spacing belong to the wordmark itself; the header only
+   says how big it is. */
 .wordmark {
   font-size: var(--gd-text-lg);
-  font-weight: 700;
-  letter-spacing: -0.03em;
 }
 
 .nav {
