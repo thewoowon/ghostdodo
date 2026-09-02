@@ -13,9 +13,13 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /app
 
 # Dependencies first: this layer is invalidated only by the lockfile.
+#
+# Deliberately no `--mount=type=cache`. It is BuildKit-only syntax, and
+# Railway's builder rejects the Dockerfile outright rather than ignoring the
+# flag ("missing an id argument"). The cache only ever saved a warm rebuild,
+# which a remote builder starting from scratch does not have anyway.
 COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+RUN uv sync --frozen --no-dev --no-install-project
 
 COPY alembic.ini ./
 COPY app ./app
