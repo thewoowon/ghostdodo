@@ -207,8 +207,9 @@ same-site, and there is no CORS or CSRF story to maintain. Evidence lives in
 a private S3 bucket, reachable only through signed URLs.
 
 The API ships as a container (`apps/api/Dockerfile`); `railway.json` runs
-`alembic upgrade head` before the new one takes traffic. Both deploys are
-driven from CI so nothing ships that the test jobs have not gone green on.
+`alembic upgrade head` before the new one takes traffic. Railway and Vercel
+each deploy from their own GitHub integration, so CI runs tests and nothing
+else — there are no deployment credentials in this repository.
 
 Everything above is in the repository. The account work — bucket, mail
 domain, projects, DNS, OAuth redirect URI — is a step-by-step runbook in

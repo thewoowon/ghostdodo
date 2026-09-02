@@ -121,9 +121,12 @@ later is one setting plus one function in `app/core/email.py`.
 3. Add **Postgres** and **Redis** from the project's Add Service menu.
    Postgres must be 16 — `0001_bootstrap` creates `pg_trgm` and `unaccent`,
    which Korean company search depends on.
-4. **Turn off automatic deploys on push.** CI deploys this service after its
-   tests pass (`.github/workflows/ci.yml`); leaving Railway's own trigger on
-   means every push deploys twice, once ungated.
+4. Deploys are triggered by Railway's own GitHub integration. Two settings
+   are worth finding:
+   - **Wait for CI** — holds the deploy until the checks on the commit pass,
+     which is what keeps a red test suite from shipping.
+   - **Watch Paths: `apps/api/**`** — otherwise a web-only commit rebuilds
+     and redeploys the API for nothing.
 5. Settings → Networking → **Generate Domain**. Note the
    `*.up.railway.app` hostname; Vercel needs it.
 
@@ -179,8 +182,10 @@ mail provider has no key. Trust it — a failed boot here is the check working.
 1. New project → this repository → **Root Directory: `apps/web`**.
    `apps/web/vercel.json` sets the pnpm workspace install and the Seoul
    region.
-2. **Turn off automatic deploys** (Settings → Git), for the same reason as
-   Railway.
+2. Vercel deploys from its own GitHub integration. Root Directory is enough
+   for it to build only the web app, and it gives you a preview deploy per
+   pull request for free. There is no wait-for-CI switch, but a broken build
+   fails the deploy on its own.
 3. Environment variables (Production):
 
    | Variable | Value |
@@ -213,27 +218,34 @@ import**. Until then `/auth/providers` reports `google: false` and the
 sign-in page hides the button rather than offering one that fails. The magic
 link works without it, so this does not block a deploy.
 
-## 6. CI deploy
+## 6. CI
 
-`.github/workflows/ci.yml` deploys after `web` and `api` are green, API
-first. Add these to the repository:
+`.github/workflows/ci.yml` runs tests only — it does not deploy, and there
+are no deployment secrets in the repository. Each provider watches GitHub
+itself.
 
-| Kind | Name | Value |
-|---|---|---|
-| Secret | `RAILWAY_TOKEN` | Railway project token |
-| Variable | `RAILWAY_SERVICE` | the API service's name |
-| Secret | `VERCEL_TOKEN` | Vercel account token |
-| Secret | `VERCEL_ORG_ID` | from `.vercel/project.json` after `vercel link` |
-| Secret | `VERCEL_PROJECT_ID` | same file |
+That means the two deploys are **not ordered**. Railway runs
+`alembic upgrade head` before its own container rolls, so the schema is
+never behind the API; but the web app can go live a few seconds before or
+after. For an ordinary change that does not matter. For a change where it
+would — a migration the new pages depend on — deploy the API first from the
+Railway dashboard and let Vercel follow.
 
-A deploy already running is never cancelled by the next push; it finishes,
-and the newer commit deploys behind it.
+The API job runs Postgres and Redis as service containers and no object
+storage. That is deliberate: presigning a POST or a GET is local computation
+in botocore, and no test round-trips an object, so a MinIO container would
+sit there testing nothing. (It used to. `bitnami/minio:latest` stopped
+existing when Bitnami reorganised their Docker Hub catalogue, which is how
+we found out it was never load-bearing.)
 
 ---
 
 ## First deploy — the order that works
 
-1. S3 bucket, Resend domain (both are DNS-latency-bound; start them first).
+1. S3 bucket, Resend domain (both are DNS-latency-bound; start them first),
+   and the `privacy@ghostdodo.com` mailbox — the privacy policy and terms
+   both name it as the only intake for 열람·정정·삭제 requests and rights
+   notices, so it has to answer before launch.
 2. Railway service + Postgres + Redis, environment variables, first deploy.
    Migrations run as the pre-deploy command. Check
    `https://<service>.up.railway.app/health/ready` returns

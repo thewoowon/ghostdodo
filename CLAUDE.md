@@ -200,7 +200,8 @@ reputation ledger, and metric recompute all commit together or none do.
 **Deployment is built but not yet run.** The code side is done: an API
 Dockerfile, `railway.json` (Dockerfile build, `/health/ready` check,
 `alembic upgrade head` as the pre-deploy command), `apps/web/vercel.json`,
-the `/api/v1` rewrite in `next.config.ts`, and CI-gated deploy jobs for both.
+and the `/api/v1` rewrite in `next.config.ts`. Railway and Vercel deploy
+from their own GitHub integrations; CI runs tests only.
 What is left is account work — the S3 bucket, the Resend domain, the two
 projects, DNS — and it is written up step by step in `docs/DEPLOYMENT.md`.
 

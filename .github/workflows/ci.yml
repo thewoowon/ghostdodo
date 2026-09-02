@@ -60,19 +60,19 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 20
-      minio:
-        image: bitnami/minio:latest
-        env:
-          MINIO_ROOT_USER: ghostdodo
-          MINIO_ROOT_PASSWORD: ghostdodo_dev_secret
-          MINIO_DEFAULT_BUCKETS: ghostdodo-evidence-dev
-        ports: ["9000:9000"]
 
     env:
       APP_ENV: test
       DATABASE_URL: postgresql+asyncpg://ghostdodo:ghostdodo@localhost:5432/ghostdodo
       REDIS_URL: redis://localhost:6379/0
       AUTH_SECRET: ci_only_secret_not_used_in_any_deployment_000000
+      # No MinIO service container, deliberately. Presigning a POST or a GET
+      # is local computation — botocore signs, it does not call S3 — and the
+      # suite never round-trips an object, so the container it used to start
+      # was testing nothing. These values only have to exist for the signer.
+      # A test that genuinely needs storage (head_object, delete_object) has
+      # to bring its own; adding the service back will not help, since the
+      # bucket would still be empty.
       S3_ENDPOINT: http://localhost:9000
       S3_BUCKET: ghostdodo-evidence-dev
       S3_ACCESS_KEY: ghostdodo
@@ -104,64 +104,3 @@ jobs:
 
       - run: uv run pytest
 
-  # ── Deploy ──────────────────────────────────────────────────────────────
-  # Both deploys are driven from here rather than from the providers' own Git
-  # integrations, so nothing ships that CI has not gone green on. That means
-  # auto-deploy must be OFF on both the Railway service and the Vercel
-  # project — otherwise every push deploys twice, once ungated.
-  #
-  # API first: `alembic upgrade head` runs as Railway's pre-deploy command,
-  # so the schema is in place before the web app that reads through it.
-
-  deploy-api:
-    name: deploy api → railway
-    needs: [web, api]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: production
-    # A deploy in flight is never cancelled by the next push; it finishes and
-    # the newer commit deploys after it.
-    concurrency:
-      group: deploy-api
-      cancel-in-progress: false
-    defaults:
-      run:
-        working-directory: apps/api
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm install -g @railway/cli@4
-      - name: Deploy
-        run: railway up --service "$RAILWAY_SERVICE" --ci
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE }}
-
-  deploy-web:
-    name: deploy web → vercel
-    needs: [deploy-api]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: production
-    concurrency:
-      group: deploy-web
-      cancel-in-progress: false
-    defaults:
-      run:
-        working-directory: apps/web
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: npm install -g vercel@latest
-      # `vercel pull` brings down the project's production env vars, so the
-      # build here is the same build Vercel would have run itself.
-      - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
-      - run: vercel build --prod --token="$VERCEL_TOKEN"
-      - run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"

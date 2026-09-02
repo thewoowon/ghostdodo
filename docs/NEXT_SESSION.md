@@ -20,8 +20,8 @@ Shipped with it:
   `alembic upgrade head` as the pre-deploy command, so the schema is in
   place before the container takes traffic.
 - `apps/web/vercel.json` and the `/api/v1` rewrite in `next.config.ts`.
-- Deploy jobs in `.github/workflows/ci.yml`, gated on the test jobs, API
-  first.
+- Railway and Vercel deploy from their own GitHub integrations. CI runs
+  tests only and holds no deployment credentials.
 - A real mail provider (`app/core/email.py`, Resend), because
   `EMAIL_PROVIDER=console` is now refused at boot in production — a logged
   magic link is a working sign-in.
