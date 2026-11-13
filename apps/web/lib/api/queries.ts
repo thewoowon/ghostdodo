@@ -22,12 +22,14 @@ const PUBLIC_CACHE = { revalidate: 300 } as const;
 
 export function searchCompanies(
   query: string,
-  signal?: AbortSignal,
+  { signal, visitor }: { signal?: AbortSignal; visitor?: string | null } = {},
 ): Promise<CompanySummary[]> {
   const params = new URLSearchParams({ q: query });
   return apiRequest<CompanySummary[]>(`/companies/search?${params}`, {
     cache: "no-store",
     ...(signal ? { signal } : {}),
+    // Search is rate-limited per visitor; see `RequestOptions.visitor`.
+    ...(visitor ? { visitor } : {}),
   });
 }
 

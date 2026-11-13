@@ -5,7 +5,8 @@ import { afterEach, vi } from "vitest";
 
 afterEach(() => {
   cleanup();
-  window.localStorage.clear();
+  // Node-environment suites (tests/proxy.test.ts) have no window.
+  if (typeof window !== "undefined") window.localStorage.clear();
   vi.restoreAllMocks();
 });
 

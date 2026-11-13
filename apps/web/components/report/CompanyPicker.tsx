@@ -27,7 +27,7 @@ export function CompanyPicker({
     if (!trimmed || trimmed === selected) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      searchCompanies(trimmed, controller.signal)
+      searchCompanies(trimmed, { signal: controller.signal })
         .then(setResults)
         .catch(() => setResults([]));
     }, 180);

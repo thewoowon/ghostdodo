@@ -34,6 +34,9 @@ const nextConfig: NextConfig = {
         // CORS never enters the picture. Everything the browser sends —
         // fetches, and the Google sign-in navigation that leaves the app —
         // goes through here.
+        //
+        // `proxy.ts` performs this same rewrite first, so it can name the
+        // visitor to the API on the way; this entry is the fallback.
         source: "/api/v1/:path*",
         destination: `${API_ORIGIN}/api/v1/:path*`,
       },

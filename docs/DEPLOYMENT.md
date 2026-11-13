@@ -143,7 +143,8 @@ services rather than being pasted copies.
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` |
 | `REDIS_URL` | `${{Redis.REDIS_URL}}` |
 | `AUTH_SECRET` | `openssl rand -hex 32` |
-| `TRUSTED_PROXY_HOPS` | `2` |
+| `TRUSTED_PROXY_HOPS` | `1` |
+| `PROXY_SHARED_SECRET` | `openssl rand -hex 32`, the same value as on Vercel |
 | `EMAIL_PROVIDER` | `resend` |
 | `RESEND_API_KEY` | from step 2 |
 | `EMAIL_FROM` | `GhostDodo <no-reply@ghostdodo.com>` |
@@ -167,11 +168,29 @@ SigV4 will reject it.
 scheme to `postgresql+asyncpg://`, because SQLAlchemy would otherwise reach
 for a sync driver that is not installed.
 
-**`TRUSTED_PROXY_HOPS=2`** is Vercel's hop plus Railway's edge. It is how
-`client_ip` finds the caller: it counts that many entries back from the *end*
-of `X-Forwarded-For`, because everything to the left of them is whatever the
-caller chose to send. Too high and a caller picks their own rate-limit
-bucket; too low and every visitor shares one.
+**How the API finds the visitor.** Railway's edge *replaces*
+`X-Forwarded-For` with the address that connected to it. For browser
+traffic that address is Vercel's, so no hop count can find the visitor.
+That was measured on 2026-11-13: the whole site was sharing one rate-limit
+bucket. Instead, `proxy.ts` on Vercel names the visitor in `X-GD-Client-IP`
+and vouches for it with `X-GD-Proxy-Secret`. The API believes the IP only
+when the secret matches, because the Railway hostname is public. The
+`/search` Server Component sends the same pair on its direct fetch.
+
+`PROXY_SHARED_SECRET` must be identical on both sides. If either side lacks
+it, nothing breaks: the API ignores the header and falls back to hop
+counting, which brings back the shared bucket. So set it on both, then
+verify.
+
+**`TRUSTED_PROXY_HOPS=1`** is that fallback. It covers requests that skip
+the web tier, such as a direct hit on the Railway hostname. The edge has
+just overwritten the chain with the caller's own address, so one hop from
+the right is the caller, not something they chose.
+
+Verify by sending six sign-in requests through `ghostdodo.com`. The sixth
+should get 429, and a request from another network should still get 202.
+For a finer check, see the one-request `ip_hash` comparison in
+`docs/NEXT_SESSION.md`.
 
 The API refuses to boot if `AUTH_SECRET` is short or a placeholder, if either
 base URL is plaintext, if `EMAIL_PROVIDER` is `console`, or if the configured
@@ -193,9 +212,12 @@ mail provider has no key. Trust it — a failed boot here is the check working.
    | `API_ORIGIN` | `https://<service>.up.railway.app` |
    | `NEXT_PUBLIC_API_BASE_URL` | `/api/v1` |
    | `NEXT_PUBLIC_APP_URL` | `https://ghostdodo.com` |
+   | `PROXY_SHARED_SECRET` | the same value as the API's |
 
-   `API_ORIGIN` does two jobs: it is where `/api/v1/*` is rewritten, and it
-   is what Server Components fetch directly. The build fails on Vercel if it
+   `API_ORIGIN` does two jobs: it is where `/api/v1/*` is rewritten (by
+   `proxy.ts`, with `next.config.ts` as the fallback), and it is what Server
+   Components fetch directly. `PROXY_SHARED_SECRET` is server-only. Never
+   give it a `NEXT_PUBLIC_` prefix. The build fails on Vercel if it
    is missing, rather than silently proxying production traffic to a
    localhost that isn't there.
 
@@ -270,11 +292,11 @@ declaring victory on the home page rendering.
 | The header shows the handle after verifying | **The cookie crossed the proxy.** This is the one that fails if the layout is wrong |
 | `/me` shows rank and both ledgers | Session reaches authenticated Server Components |
 | Submit a report with an attachment | S3 CORS and the presigned POST |
-| A second sign-in attempt from the same address within a minute is refused | Rate limiting has a real client address, not the proxy's |
+| A sixth sign-in attempt from one network within 15 minutes is refused, and another network is not | Rate limiting sees the visitor, not the proxy (`PROXY_SHARED_SECRET` on both sides) |
 
-That last one is worth doing deliberately. If `TRUSTED_PROXY_HOPS` is wrong,
-everything above still passes and the whole site quietly shares one
-rate-limit bucket.
+That last one is worth doing deliberately. If the secret is missing or
+mismatched, everything above still passes and the whole site quietly shares
+one rate-limit bucket.
 
 ---
 

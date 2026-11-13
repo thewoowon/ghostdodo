@@ -96,10 +96,17 @@ class TestDatabaseUrl:
             Settings(database_url="postgresql+psycopg2://u:p@db.internal:5432/railway")
 
 
-def _request(*, peer: str = "10.0.0.7", forwarded: str | None = None) -> Request:
+def _request(
+    *,
+    peer: str = "10.0.0.7",
+    forwarded: str | None = None,
+    extra: dict[str, str] | None = None,
+) -> Request:
     headers: list[tuple[bytes, bytes]] = []
     if forwarded is not None:
         headers.append((b"x-forwarded-for", forwarded.encode()))
+    for name, value in (extra or {}).items():
+        headers.append((name.lower().encode(), value.encode()))
     return Request(
         {
             "type": "http",
@@ -151,6 +158,62 @@ class TestClientIpBehindProxies:
     ) -> None:
         monkeypatch.setattr(settings, "trusted_proxy_hops", 2)
         assert client_ip(_request()) == "10.0.0.7"
+
+
+_SECRET = "s" * 40
+
+
+class TestClientIpVouchedByTheWebTier:
+    """Production measured on 2026-11-13: Railway's edge replaces
+    X-Forwarded-For with Vercel's address, so no hop count finds the
+    visitor. The Next proxy names them instead, and the shared secret is
+    what makes that header more than something anyone can type."""
+
+    def _vouched(self, ip: str, secret: str = _SECRET, **kw: str) -> Request:
+        return _request(
+            forwarded="66.33.60.1",
+            extra={"X-GD-Client-IP": ip, "X-GD-Proxy-Secret": secret},
+            **kw,
+        )
+
+    def test_the_web_tier_names_the_visitor(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "proxy_shared_secret", _SECRET)
+        monkeypatch.setattr(settings, "trusted_proxy_hops", 2)
+        assert client_ip(self._vouched("203.0.113.5")) == "203.0.113.5"
+
+    def test_a_wrong_secret_is_not_believed(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A direct hit on the Railway hostname can send the IP header, so
+        without the secret it must fall back as if the header were absent."""
+        monkeypatch.setattr(settings, "proxy_shared_secret", _SECRET)
+        monkeypatch.setattr(settings, "trusted_proxy_hops", 0)
+        assert client_ip(self._vouched("9.9.9.9", secret="guess")) == "10.0.0.7"  # noqa: S106
+
+    def test_the_header_alone_is_not_believed(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "proxy_shared_secret", _SECRET)
+        monkeypatch.setattr(settings, "trusted_proxy_hops", 0)
+        request = _request(extra={"X-GD-Client-IP": "9.9.9.9"})
+        assert client_ip(request) == "10.0.0.7"
+
+    def test_no_configured_secret_disables_the_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """An empty secret must not match an empty header."""
+        monkeypatch.setattr(settings, "proxy_shared_secret", "")
+        monkeypatch.setattr(settings, "trusted_proxy_hops", 0)
+        assert client_ip(self._vouched("9.9.9.9", secret="")) == "10.0.0.7"
+
+    def test_junk_in_the_ip_header_falls_through(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(settings, "proxy_shared_secret", _SECRET)
+        monkeypatch.setattr(settings, "trusted_proxy_hops", 0)
+        assert client_ip(self._vouched("not-an-ip")) == "10.0.0.7"
+
+    def test_one_visitor_is_one_bucket_however_spelled(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(settings, "proxy_shared_secret", _SECRET)
+        assert client_ip(self._vouched("2001:DB8:0:0::1")) == "2001:db8::1"
+
+    def test_production_refuses_a_short_secret(self) -> None:
+        with pytest.raises(RuntimeError, match="PROXY_SHARED_SECRET"):
+            _production(proxy_shared_secret="short").check_production_hardening()  # noqa: S106
 
 
 class TestMagicLinkDelivery:

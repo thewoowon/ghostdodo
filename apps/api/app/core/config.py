@@ -73,8 +73,17 @@ class Settings(BaseSettings):
     # X-Forwarded-For. Every hop beyond this count is caller-supplied and
     # must not be believed. 0 means "trust nothing, use the socket peer".
     #
-    # Vercel rewrite -> Railway edge -> app is two hops.
+    # Behind Vercel -> Railway this cannot find the visitor: Railway's edge
+    # replaces X-Forwarded-For with the address that connected to it, which
+    # is Vercel's (measured 2026-11-13). It remains the fallback for
+    # requests that do not carry the proxy secret below.
     trusted_proxy_hops: int = 0
+
+    # Shared with the web tier. The Next proxy names the visitor in
+    # X-GD-Client-IP and proves it is the one speaking with this secret,
+    # because the Railway hostname is public and anyone could send the IP
+    # header. Empty disables the header path entirely.
+    proxy_shared_secret: str = ""
 
     rate_limit_enabled: bool = True
 
@@ -174,6 +183,10 @@ class Settings(BaseSettings):
             problems.append("WEB_BASE_URL must be https in production")
         if self.app_base_url.startswith("http://"):
             problems.append("APP_BASE_URL must be https in production")
+        if self.proxy_shared_secret and len(self.proxy_shared_secret) < 32:
+            # Empty is allowed (falls back to hop counting); a short one is a
+            # guessable key to every visitor's rate-limit bucket.
+            problems.append("PROXY_SHARED_SECRET is too short (need >=32 random chars)")
         if self.email_provider == "console":
             # Console delivery writes a working sign-in token to the log.
             problems.append("EMAIL_PROVIDER=console leaks sign-in tokens to logs")

@@ -121,16 +121,19 @@ the API on Railway, so the cookie the API sets is a cookie for the site. A
 change that gives the API its own public hostname reintroduces the problem
 and takes CORS and CSRF with it. See `docs/DEPLOYMENT.md`.
 
-**`X-Forwarded-For` is read from the right, not the left.** The leftmost
-entry is whatever the caller sent, so trusting it lets anyone pick their own
-rate-limit bucket — or someone else's. `client_ip` counts
-`TRUSTED_PROXY_HOPS` entries back from the end. The container runs uvicorn
-*without* `--proxy-headers` so there is exactly one place that decides
-this. Get it wrong and nothing visibly breaks: the site just shares one
-bucket. **It is wrong in production today.** The value 2 assumed "Vercel,
-then Railway's edge", but measured on 2026-11-13 the visitor's address does
-not reach the API at all. Railway's edge appears to overwrite the header.
-See `docs/NEXT_SESSION.md` before touching rate limits or `client_ip`.
+**The visitor's IP comes from the web tier, vouched for with a secret.**
+Railway's edge replaces `X-Forwarded-For` with whoever connected to it, and
+for browser traffic that is Vercel. No hop count finds the visitor; this
+was measured on 2026-11-13, when the whole site shared one rate-limit bucket.
+`proxy.ts` sets `X-GD-Client-IP` plus `X-GD-Proxy-Secret`, and `client_ip`
+believes the IP only when the secret matches, because the Railway hostname is
+public. A Server Component that fetches a rate-limited endpoint directly
+must pass `visitor` (see `/search`), or it is bucketed as Vercel.
+`client_ip` falls back to counting `TRUSTED_PROXY_HOPS` from the *right* of
+`X-Forwarded-For`; the leftmost entry is whatever the caller typed. The
+container runs uvicorn *without* `--proxy-headers`, so there is exactly
+one place that decides this. Get it wrong and nothing visibly breaks: the
+site just shares one bucket.
 
 **`EMAIL_PROVIDER=console` writes a working sign-in to the log.** Same class
 of problem as `dev_token`, and `check_production_hardening` refuses to boot

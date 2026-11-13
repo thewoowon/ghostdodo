@@ -45,41 +45,34 @@ The S3 CORS rule is in place (checked 2026-11-13): a preflight from
 `https://ghostdodo.com` gets exactly the runbook's rule back, and other
 origins get 403. An actual upload in production has still not been tried.
 
-## Rate limiting does not see the visitor in production (found 2026-11-13)
+## Client IP in production (found and fixed in code 2026-11-13)
 
-**This is a launch blocker.** `TRUSTED_PROXY_HOPS=2` assumes the API
-receives `X-Forwarded-For: <visitor>, <Vercel>`. Measured, it does not.
+`TRUSTED_PROXY_HOPS=2` assumed the API receives
+`X-Forwarded-For: <visitor>, <Vercel>`. Measured, it does not.
 
 The check: one `POST https://ghostdodo.com/api/v1/auth/sign-in` from a
-known IPv4 address, with a spoofed `X-Forwarded-For: 203.0.113.7` added.
-In the container, the stored `magic_link_tokens.requested_ip_hash` was
-compared against `hash_ip()` of both addresses. It matched **neither**.
+known IPv4 address, with a spoofed `X-Forwarded-For: 203.0.113.7`. In the
+container, the stored `magic_link_tokens.requested_ip_hash` was compared
+against `hash_ip()` of both addresses, and it matched neither. Railway staff
+say the edge *overwrites* the header with whoever connected, which here is
+Vercel. As a result sign-in (5 per 15 min), search, and evidence upload were
+shared site-wide.
 
-The likely reason, from Railway staff answers on Station: the Railway edge
-*overwrites* `X-Forwarded-For` and `X-Real-IP` with the address that
-connected to it. Here that address is Vercel's egress, not the visitor. The
-chain then arrives one entry long, shorter than the hop count, and
-`client_ip` falls back to the socket peer, an internal Railway address.
-No hop count recovers the visitor from that. One measurement, so treat the
-mechanism as probable, but the outcome is measured.
+The fix, as the user chose: `proxy.ts` sends `X-GD-Client-IP` and
+`X-GD-Proxy-Secret`, and the API believes the IP only with a matching
+`PROXY_SHARED_SECRET`. Verified locally through `next start` in the
+one-origin layout:
+- Vercel-style `x-real-ip` reaches the stored hash.
+- A pair forged by the browser is stripped.
+- A direct hit without the secret falls back.
+- The sixth sign-in is refused for one visitor while another still gets in.
 
-What shares a bucket as a result: `sign_in` (5 per 15 min, so the sixth
-sign-in on the whole site within 15 minutes is refused), `company_search`
-(120/min), `evidence_upload` (30/h), and anonymous `outbound_click`.
-`report_submit` keys on the user id and is unaffected.
-
-Fix directions, not yet chosen:
-
-- Have the web tier name the visitor. Next middleware on `/api/v1/*` sets
-  a header carrying the visitor IP Vercel saw, plus a shared secret. The
-  API trusts that header only when the secret matches, because the Railway
-  hostname is publicly reachable and anyone could send the header.
-- Key `sign_in` on the normalized email as well as the address, so a
-  shared bucket stops locking out strangers.
-
-Verification for whichever fix lands: repeat the one-request check above.
-`hops_check.py` was a scratch script. Its whole logic is "select the newest
-token row and compare its hash with `hash_ip(candidate)`".
+**Live only once `PROXY_SHARED_SECRET` is set, identically, on Vercel and on
+Railway**, with `TRUSTED_PROXY_HOPS=1` on Railway. Until then the code
+behaves exactly as before. Then rerun the one-request check: the stored
+hash should match the real address. The script's whole logic is "select the
+newest token row and compare its hash with `hash_ip(candidate)`", run with
+`PYTHONPATH=/app`.
 
 ## Local state
 
@@ -104,16 +97,13 @@ for review time.
 
 ## Next session starts here
 
-1. **Fix client-IP resolution behind Vercel → Railway** (section above).
-   Pick a direction with the user first.
+1. **Set `PROXY_SHARED_SECRET` on Vercel and Railway, set
+   `TRUSTED_PROXY_HOPS=1` on Railway, then verify** (section above).
 2. Evidence upload in production, end to end. CORS is confirmed. What
    remains is a real submission with an attachment, made by the user since
    it needs their inbox. Reject the test report afterwards.
-3. Smaller mobile leftovers:
-   - `공고 자세히` and the inline company links on job cards are 21–23px
-     tall.
-   - `/me/reports` cards show the job family but no company name. Confirm
-     that is intended.
+3. Smaller mobile leftover: `공고 자세히` and the inline company links on
+   job cards are 21–23px tall. (`/me/reports` now names the company.)
 
 Production access from this machine: the SSH key `aepeul-mac` is
 registered with Railway, and this directory is `railway link`ed to

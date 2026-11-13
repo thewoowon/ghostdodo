@@ -6,6 +6,7 @@
  * Server Components may need an internal address inside a container network.
  */
 import type { ApiErrorBody } from "./types";
+import { vouchFor } from "./visitor";
 
 const PUBLIC_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
@@ -89,6 +90,10 @@ export type RequestOptions = {
   /** Lets the request outlive the page that started it — required for a
    *  click that is recorded as the browser navigates away. */
   keepalive?: boolean;
+  /** Server Components only: the visitor this read is made for. A server
+   *  fetch goes straight to the API, past `proxy.ts`, so without this the
+   *  API sees Vercel and every visitor shares its rate-limit bucket. */
+  visitor?: string | null;
 };
 
 export async function apiRequest<T>(
@@ -104,12 +109,20 @@ export async function apiRequest<T>(
     cache,
     signal,
     keepalive,
+    visitor,
   } = options;
 
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (cookie) headers["Cookie"] = cookie;
   if (idempotencyKey) headers["X-Idempotency-Key"] = idempotencyKey;
+  if (visitor && typeof window === "undefined") {
+    const vouched = new Headers();
+    vouchFor(vouched, visitor);
+    vouched.forEach((value, name) => {
+      headers[name] = value;
+    });
+  }
 
   // Resolved outside the try: a misconfigured base is a deployment error,
   // not an unreachable API, and must not be reported as one.

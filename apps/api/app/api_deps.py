@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hmac
+import ipaddress
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -56,20 +58,36 @@ async def get_admin(user: Annotated[User, Depends(get_current_user)]) -> User:
     return user
 
 
-def client_ip(request: Request) -> str | None:
-    """The caller's address, counted from the *right* of X-Forwarded-For.
+CLIENT_IP_HEADER = "X-GD-Client-IP"
+PROXY_SECRET_HEADER = "X-GD-Proxy-Secret"  # noqa: S105 - a header name, not a secret
 
-    The leftmost entry is whatever the caller sent, so trusting it lets
-    anyone choose their own rate-limit bucket — or someone else's. Only the
-    entries appended by our own proxies are trustworthy, and there are
-    exactly `trusted_proxy_hops` of them, so the caller sits at that offset
-    from the end.
+
+def client_ip(request: Request) -> str | None:
+    """The caller's address, for rate limits and the stored ip hash.
+
+    First choice is the web tier's word for it. In production every browser
+    request reaches this app through the Next proxy on Vercel, then Railway's
+    edge, and that edge replaces X-Forwarded-For with Vercel's address — so
+    the visitor survives only in a header the proxy sets. It is believed only
+    with the shared secret, because the Railway hostname is public and the
+    header alone is something anyone can type.
+
+    Otherwise, counted from the *right* of X-Forwarded-For. The leftmost
+    entry is whatever the caller sent, so trusting it lets anyone choose
+    their own rate-limit bucket — or someone else's. Only the entries
+    appended by our own proxies are trustworthy, and there are exactly
+    `trusted_proxy_hops` of them, so the caller sits at that offset from the
+    end.
 
     With no proxies configured (development, tests) the header is ignored
     entirely and the socket peer is used. The container therefore runs
     uvicorn *without* `--proxy-headers`: every forwarding decision is made
     here, where the hop count is known.
     """
+    vouched = _vouched_client_ip(request)
+    if vouched is not None:
+        return vouched
+
     hops = settings.trusted_proxy_hops
     if hops > 0:
         forwarded = request.headers.get("X-Forwarded-For")
@@ -81,6 +99,22 @@ def client_ip(request: Request) -> str | None:
             if len(chain) >= hops:
                 return chain[-hops]
     return request.client.host if request.client else None
+
+
+def _vouched_client_ip(request: Request) -> str | None:
+    secret = settings.proxy_shared_secret
+    if not secret:
+        return None
+    sent = request.headers.get(PROXY_SECRET_HEADER)
+    if sent is None or not hmac.compare_digest(sent.encode(), secret.encode()):
+        return None
+    raw = (request.headers.get(CLIENT_IP_HEADER) or "").strip()
+    try:
+        # Normalised, so one visitor is one bucket however the address was
+        # spelled. Junk from a misconfigured proxy falls through.
+        return str(ipaddress.ip_address(raw))
+    except ValueError:
+        return None
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]

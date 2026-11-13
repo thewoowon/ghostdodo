@@ -53,7 +53,7 @@ export function CompanySearch({
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setStatus("loading");
-      searchCompanies(trimmed, controller.signal)
+      searchCompanies(trimmed, { signal: controller.signal })
         .then((items) => {
           setResults(items);
           setActiveIndex(-1);

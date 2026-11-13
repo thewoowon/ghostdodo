@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 
 import { CompanySearch } from "@/components/search/CompanySearch";
 import { searchCompanies } from "@/lib/api/queries";
+import { visitorIp } from "@/lib/api/visitor";
 import { ApiUnavailableError } from "@/lib/api/client";
 import { CompanyResultList } from "@/components/search/CompanyResultList";
 
@@ -23,7 +25,7 @@ export default async function SearchPage({ searchParams }: Props) {
   let unavailable = false;
   if (query) {
     try {
-      results = await searchCompanies(query);
+      results = await searchCompanies(query, { visitor: visitorIp(await headers()) });
     } catch (error) {
       if (error instanceof ApiUnavailableError) unavailable = true;
       else throw error;
