@@ -36,13 +36,17 @@ export function CompanySearch({
   const [activeIndex, setActiveIndex] = useState(-1);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const rootRef = useRef<HTMLDivElement>(null);
+  // The search page already lists results for the query it opened with, and
+  // a dropdown of the same companies on top of them hid the list. Suggest
+  // only for what the visitor types.
+  const typed = useRef(false);
 
   useEffect(() => {
     const trimmed = query.trim();
     // An empty query is a derived state, not a stored one — clearing results
     // here would set state synchronously inside an effect and cascade a
     // render. See `visibleResults` below.
-    if (trimmed.length === 0) return;
+    if (trimmed.length === 0 || !typed.current) return;
 
     // Abort in-flight requests so a fast typist never sees an older response
     // overwrite a newer one.
@@ -129,7 +133,10 @@ export function CompanySearch({
           role="combobox"
           className={styles.input}
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            typed.current = true;
+            setQuery(event.target.value);
+          }}
           onKeyDown={onKeyDown}
           onFocus={() => visibleResults.length > 0 && setOpen(true)}
           placeholder="회사 이름을 검색하세요"
