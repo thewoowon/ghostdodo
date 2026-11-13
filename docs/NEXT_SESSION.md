@@ -56,6 +56,20 @@ report needs a moderator decision before it counts. With one operator,
 moderation throughput *is* data throughput. Any growth push has to plan
 for review time.
 
+## Next session starts here
+
+1. **Mobile.** The site is not optimised for phones, and the header (GNB)
+   is the worst of it. The user asked for this first.
+2. The sign-in page shows the Google button on first paint and hides it
+   once `/auth/providers` answers. It should render nothing until it knows.
+3. Smoke tests not yet run in production: evidence upload (S3 CORS), and
+   the rate-limit check that proves `TRUSTED_PROXY_HOPS` is right.
+
+Production access from this machine: the SSH key `aepeul-mac` is
+registered with Railway. `railway ssh` needs a known-hosts entry first.
+To run a one-off command, write a config with `railway ssh config --path
+<file> --alias gd-prod` and use `ssh -F <file> gd-prod '<cmd>'`.
+
 ## Plan agreed in direction (not yet started)
 
 The risk is cold start, not code. A company publishes rates only at n≥15
