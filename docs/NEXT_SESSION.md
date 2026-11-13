@@ -67,12 +67,13 @@ one-origin layout:
 - A direct hit without the secret falls back.
 - The sixth sign-in is refused for one visitor while another still gets in.
 
-**Live only once `PROXY_SHARED_SECRET` is set, identically, on Vercel and on
-Railway**, with `TRUSTED_PROXY_HOPS=1` on Railway. Until then the code
-behaves exactly as before. Then rerun the one-request check: the stored
-hash should match the real address. The script's whole logic is "select the
-newest token row and compare its hash with `hash_ip(candidate)`", run with
-`PYTHONPATH=/app`.
+**Live and verified in production, 2026-11-13 19:12 KST.**
+`PROXY_SHARED_SECRET` is set on both sides and `TRUSTED_PROXY_HOPS=1` on
+Railway. One request was sent with a spoofed `X-Forwarded-For` and a forged
+`X-GD-Client-IP`/`X-GD-Proxy-Secret` pair, and the stored hash matched the
+real address. To recheck after any proxy or hosting change, send that same
+request. The script's whole logic is "select the newest token row and
+compare its hash with `hash_ip(candidate)`", run with `PYTHONPATH=/app`.
 
 ## Local state
 
@@ -97,8 +98,11 @@ for review time.
 
 ## Next session starts here
 
-1. **Set `PROXY_SHARED_SECRET` on Vercel and Railway, set
-   `TRUSTED_PROXY_HOPS=1` on Railway, then verify** (section above).
+1. **Real-company directory: decide with the user** whether to import
+   identity-only records before legal review, and if so behind what
+   publication switch. Public report cards show the moment a report is
+   verified, with no sample bar, so an import without a switch would
+   publish individual records about real companies.
 2. Evidence upload in production, end to end. CORS is confirmed. What
    remains is a real submission with an attachment, made by the user since
    it needs their inbox. Reject the test report afterwards.
