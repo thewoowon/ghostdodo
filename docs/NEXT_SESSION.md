@@ -140,9 +140,13 @@ The risk is cold start, not code. A company publishes rates only at n≥15
 with ≥30% verified. Engineering that helps, in order:
 
 1. Fix production (above), then run the smoke test in `docs/DEPLOYMENT.md`.
-2. **Quick log.** One applicant has typically applied to dozens of
-   companies. Today that means one 8-step wizard per company. A fast
-   multi-company entry is the biggest lever on volume.
+2. ~~Quick log~~. **Built 2026-11-13 (5bea5b3):**
+   - `/report/quick` takes shared fields once and one line per company,
+     up to 30 lines counted as one submission.
+   - The last contact date is required once past the application.
+   - Lines share a `batch_id`. The review queue offers a batch partial
+     verification, covering only lines that passed the auto-checks.
+   - No reputation is awarded at submission.
 3. **Personal share card.** Shows the applicant's own record: applied N,
    answered M, silent K. It names no company, so it can be shared before any
    company crosses the bar, and it carries less legal risk.
