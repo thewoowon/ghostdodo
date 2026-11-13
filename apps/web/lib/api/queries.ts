@@ -1,6 +1,7 @@
 /** Read helpers used by Server Components. */
 import { apiRequest, companyTag } from "./client";
 import type {
+  AuthProviders,
   CompanyDetail,
   CompanyMetrics,
   CompanySummary,
@@ -130,4 +131,13 @@ export function getMethodology(): Promise<Methodology> {
   return apiRequest<Methodology>("/methodology", {
     next: { revalidate: 3600, tags: ["methodology"] },
   });
+}
+
+/**
+ * Which sign-in doors the API can open right now. Asked per request, not
+ * cached and not baked into the bundle: the answer follows the API's
+ * credentials, which change without a web deploy.
+ */
+export function getAuthProviders(): Promise<AuthProviders> {
+  return apiRequest<AuthProviders>("/auth/providers", { cache: "no-store" });
 }

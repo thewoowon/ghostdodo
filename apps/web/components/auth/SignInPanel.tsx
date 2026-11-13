@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { GoogleGlyph } from "@/components/auth/GoogleGlyph";
 import { ApiError, ApiUnavailableError } from "@/lib/api/client";
-import { getProviders, googleSignInUrl, requestMagicLink } from "@/lib/api/auth";
+import { googleSignInUrl, requestMagicLink } from "@/lib/api/auth";
 
 import styles from "./SignInPanel.module.css";
 
@@ -21,10 +21,13 @@ type Props = {
   /** Same-site path to land on after signing in. */
   next: string;
   callbackError: string | null;
+  /** Resolved on the server before first paint. Asking from the browser
+   *  rendered the button and then withdrew it once the answer came back,
+   *  which reads as broken — and with Google off, it always came back. */
+  googleEnabled: boolean;
 };
 
-export function SignInPanel({ next, callbackError }: Props) {
-  const [googleEnabled, setGoogleEnabled] = useState<boolean | null>(null);
+export function SignInPanel({ next, callbackError, googleEnabled }: Props) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -32,14 +35,6 @@ export function SignInPanel({ next, callbackError }: Props) {
   const [error, setError] = useState<string | null>(
     callbackError ? (CALLBACK_ERRORS[callbackError] ?? CALLBACK_ERRORS.google!) : null,
   );
-
-  useEffect(() => {
-    // Asked rather than assumed: the button must reflect what the API can
-    // actually complete, not what this bundle was built with.
-    getProviders()
-      .then((p) => setGoogleEnabled(p.google))
-      .catch(() => setGoogleEnabled(false));
-  }, []);
 
   async function sendLink(event: React.FormEvent) {
     event.preventDefault();
@@ -74,13 +69,9 @@ export function SignInPanel({ next, callbackError }: Props) {
         </p>
       )}
 
-      {googleEnabled !== false && (
+      {googleEnabled && (
         <>
-          <a
-            href={googleSignInUrl(next)}
-            className={`${styles.google} ${googleEnabled === null ? styles.googlePending : ""}`}
-            aria-disabled={googleEnabled === null}
-          >
+          <a href={googleSignInUrl(next)} className={styles.google}>
             <GoogleGlyph size={18} />
             구글 계정으로 계속하기
           </a>

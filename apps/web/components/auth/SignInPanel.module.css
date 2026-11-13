@@ -29,11 +29,6 @@
 }
 
 /* Until /auth/providers answers, the button is shown but not yet promised. */
-.googlePending {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
 .divider {
   display: flex;
   align-items: center;

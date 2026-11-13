@@ -11,11 +11,7 @@
  * to be made by the browser itself.
  */
 import { apiRequest, publicApiUrl } from "./client";
-import type { AuthProviders, SessionUser, SignInAccepted } from "./types";
-
-export function getProviders(): Promise<AuthProviders> {
-  return apiRequest<AuthProviders>("/auth/providers", { cache: "no-store" });
-}
+import type { SessionUser, SignInAccepted } from "./types";
 
 /**
  * Where to send the browser for Google sign-in.

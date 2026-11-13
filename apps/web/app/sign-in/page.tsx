@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { SignInPanel } from "@/components/auth/SignInPanel";
 import { DodoMark } from "@/components/brand/svg/DodoMark";
+import { getAuthProviders } from "@/lib/api/queries";
 
 import styles from "./page.module.css";
 
@@ -23,8 +24,25 @@ function safeNext(raw: string | undefined): string {
   return raw;
 }
 
+/**
+ * Whether to offer Google. Any failure is a no: the email path always works,
+ * so a sign-in page that cannot reach the API still shows a working door
+ * rather than an error page. Resolved to a boolean here so no JSX is built
+ * inside the try (see `lib/api/load.ts`).
+ */
+async function googleAvailable(): Promise<boolean> {
+  try {
+    return (await getAuthProviders()).google;
+  } catch {
+    return false;
+  }
+}
+
 export default async function SignInPage({ searchParams }: Props) {
-  const { next, error } = await searchParams;
+  const [{ next, error }, googleEnabled] = await Promise.all([
+    searchParams,
+    googleAvailable(),
+  ]);
 
   return (
     <div className={`gd-shell ${styles.page}`}>
@@ -37,7 +55,11 @@ export default async function SignInPage({ searchParams }: Props) {
         </p>
       </header>
 
-      <SignInPanel next={safeNext(next)} callbackError={error ?? null} />
+      <SignInPanel
+        next={safeNext(next)}
+        callbackError={error ?? null}
+        googleEnabled={googleEnabled}
+      />
 
       <p className={styles.privacy}>
         로그인에 사용한 이메일은 계정 확인과 검토 결과 안내에만 씁니다.
