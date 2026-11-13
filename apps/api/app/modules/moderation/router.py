@@ -11,6 +11,13 @@ from sqlalchemy import func, select
 
 from app.api_deps import DbSession, Moderator
 from app.core.config import settings
+from app.modules.companies import service as company_service
+from app.modules.companies.schemas import (
+    CompanyAddRequestDecision,
+    CompanyAddRequestItem,
+    CompanyAddRequestResolved,
+    CompanySummary,
+)
 from app.modules.evidence import service as evidence_service
 from app.modules.evidence.models import Evidence
 from app.modules.evidence.schemas import ModeratorEvidenceView
@@ -156,3 +163,51 @@ async def review_evidence(
     )
     await db.commit()
     return {"id": str(evidence.id), "review_state": evidence.review_state.value}
+
+
+@router.get("/company-requests", response_model=list[CompanyAddRequestItem])
+async def company_requests(
+    db: DbSession,
+    _moderator: Moderator,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+) -> list[CompanyAddRequestItem]:
+    """Oldest first. Each carries the closest existing companies so a variant
+    spelling can be merged rather than created twice."""
+    items: list[CompanyAddRequestItem] = []
+    for row in await company_service.pending_add_requests(db, limit=limit):
+        matches = await company_service.search_companies(db, query=row.submitted_name, limit=3)
+        items.append(
+            CompanyAddRequestItem(
+                id=row.id,
+                submitted_name=row.submitted_name,
+                website=row.website,
+                industry=row.industry,
+                note=row.note,
+                created_at=row.created_at,
+                possible_matches=[CompanySummary.model_validate(c) for c in matches],
+            )
+        )
+    return items
+
+
+@router.post("/company-requests/{request_id}/decision", response_model=CompanyAddRequestResolved)
+async def decide_company_request(
+    request_id: uuid.UUID,
+    payload: CompanyAddRequestDecision,
+    request: Request,
+    db: DbSession,
+    moderator: Moderator,
+) -> CompanyAddRequestResolved:
+    record, company = await company_service.decide_add_request(
+        db,
+        request_id=request_id,
+        decision=payload.decision,
+        company_slug=payload.company_slug,
+        note=payload.note,
+        moderator_id=moderator.id,
+        http_request_id=getattr(request.state, "request_id", None),
+    )
+    await db.commit()
+    return CompanyAddRequestResolved(
+        id=record.id, status=record.status, company_slug=company.slug if company else None
+    )

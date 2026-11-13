@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { DodoEgg } from "@/components/brand/svg/marks";
+import { CompanyRequestForm } from "@/components/company/CompanyRequestForm";
 import type { CompanySummary } from "@/lib/api/types";
 
 import styles from "./CompanyResultList.module.css";
@@ -23,6 +24,7 @@ export function CompanyResultList({
           아직 도감에 없는 회사일 수 있습니다. 등록을 요청하면 검토 후
           추가됩니다.
         </p>
+        <CompanyRequestForm initialName={query} />
       </div>
     );
   }

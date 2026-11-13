@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { CompanyRequestForm } from "@/components/company/CompanyRequestForm";
 import { searchCompanies } from "@/lib/api/queries";
 import type { CompanySummary } from "@/lib/api/types";
 
@@ -81,9 +82,14 @@ export function CompanyPicker({
       {selected && <p className={styles.selected}>선택됨: {selected}</p>}
 
       {!selected && trimmed.length > 1 && visibleResults.length === 0 && (
-        <p className={styles.missing}>
-          찾는 회사가 없다면 등록을 요청할 수 있습니다. 검토 후 도감에 추가됩니다.
-        </p>
+        <div className={styles.missing}>
+          <p>
+            찾는 회사가 없다면 등록을 요청할 수 있습니다. 검토 후 도감에
+            추가되면 이어서 기록할 수 있습니다.
+          </p>
+          {/* Keyed on the query so a fresh search starts a fresh form. */}
+          <CompanyRequestForm key={trimmed} initialName={trimmed} />
+        </div>
       )}
     </div>
   );

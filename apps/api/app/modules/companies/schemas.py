@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -56,6 +58,38 @@ class CompanyAddRequestInput(BaseModel):
 
 
 class CompanyAddRequestAccepted(BaseModel):
-    id: uuid.UUID
+    id: uuid.UUID | None
     status: str
     message: str = "등록 요청이 접수되었습니다. 검토 후 도감에 추가됩니다."
+    # Set when the name already belongs to a company the search did not
+    # surface — a different spelling, say. Nothing is queued then; the
+    # client links straight to it.
+    existing_slug: str | None = None
+
+
+class CompanyAddRequestItem(BaseModel):
+    """One request in the moderator queue. The requester is not part of it:
+    a moderator decides whether a company exists, not who asked."""
+
+    id: uuid.UUID
+    submitted_name: str
+    website: str | None
+    industry: str | None
+    note: str | None
+    created_at: datetime
+    # Close existing companies, so a moderator can merge a variant spelling
+    # instead of creating a second company.
+    possible_matches: list[CompanySummary]
+
+
+class CompanyAddRequestDecision(BaseModel):
+    decision: Literal["APPROVE", "MERGE", "REJECT"]
+    # Required for MERGE: the existing company the request turns out to be.
+    company_slug: str | None = Field(default=None, max_length=120)
+    note: str | None = Field(default=None, max_length=500)
+
+
+class CompanyAddRequestResolved(BaseModel):
+    id: uuid.UUID
+    status: str
+    company_slug: str | None

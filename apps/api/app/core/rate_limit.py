@@ -30,6 +30,7 @@ EVIDENCE_UPLOAD = RateLimit(limit=30, window_seconds=60 * 60)
 COMMUNITY_POST = RateLimit(limit=10, window_seconds=60 * 60)
 SEARCH = RateLimit(limit=120, window_seconds=60)
 OUTBOUND_CLICK = RateLimit(limit=60, window_seconds=60)
+COMPANY_REQUEST = RateLimit(limit=5, window_seconds=60 * 60)
 
 
 async def enforce(bucket: str, identity: str, rule: RateLimit) -> None:

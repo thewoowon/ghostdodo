@@ -19,6 +19,7 @@ export default function AdminLayout({
         <nav className={styles.nav} aria-label="운영 메뉴">
           <Link href="/admin/reports">기록 검토</Link>
           <Link href="/admin/disputes">정정 요청</Link>
+          <Link href="/admin/companies">회사 등록 요청</Link>
         </nav>
       </header>
       <p className={styles.notice}>

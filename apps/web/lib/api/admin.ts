@@ -1,7 +1,7 @@
 /** Moderator-facing API calls. Every one of these requires a session with a
  *  MODERATOR or ADMIN role; the server enforces it. */
 import { apiRequest } from "./client";
-import type { PublicReportCard } from "./types";
+import type { CompanySummary, PublicReportCard } from "./types";
 
 export type QueueItem = PublicReportCard & {
   company_id: string;
@@ -125,4 +125,35 @@ export function decideDispute(
  *  has actually asked to view the file. */
 export function viewEvidence(evidenceId: string) {
   return apiRequest<ModeratorEvidence>(`/admin/evidence/${evidenceId}`);
+}
+
+export type CompanyRequestItem = {
+  id: string;
+  submitted_name: string;
+  website: string | null;
+  industry: string | null;
+  note: string | null;
+  created_at: string;
+  /** Close existing companies, so a variant spelling is merged rather
+   *  than created twice. */
+  possible_matches: CompanySummary[];
+};
+
+export type CompanyRequestDecision = "APPROVE" | "MERGE" | "REJECT";
+
+export function fetchCompanyRequests(cookie?: string): Promise<CompanyRequestItem[]> {
+  return apiRequest<CompanyRequestItem[]>("/admin/company-requests", {
+    cache: "no-store",
+    ...(cookie ? { cookie } : {}),
+  });
+}
+
+export function decideCompanyRequest(
+  requestId: string,
+  body: { decision: CompanyRequestDecision; company_slug?: string; note?: string },
+) {
+  return apiRequest<{ id: string; status: string; company_slug: string | null }>(
+    `/admin/company-requests/${requestId}/decision`,
+    { method: "POST", body },
+  );
 }

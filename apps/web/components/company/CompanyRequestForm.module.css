@@ -1,0 +1,85 @@
+.trigger {
+  margin-top: var(--gd-space-3);
+  padding: var(--gd-space-2) var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-accent);
+  background: transparent;
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius-pill);
+  cursor: pointer;
+}
+
+.trigger:hover {
+  border-color: var(--gd-accent);
+  background: var(--gd-accent-soft);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-3);
+  margin-top: var(--gd-space-3);
+  text-align: start;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-1);
+}
+
+.label {
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-ink);
+}
+
+/* Explicit, not inherited: the form also sits inside small-print hint
+   text, and an input under 16px makes iOS zoom the page on focus. */
+.input,
+.textarea {
+  width: 100%;
+  font-size: var(--gd-text-base);
+  padding: var(--gd-space-3) var(--gd-space-4);
+  background: var(--gd-paper);
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius);
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.submit {
+  align-self: flex-start;
+  padding: var(--gd-space-3) var(--gd-space-5);
+  font-weight: 700;
+  color: var(--gd-accent-ink);
+  background: var(--gd-accent);
+  border: 0;
+  border-radius: var(--gd-radius-pill);
+  cursor: pointer;
+}
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-extinct);
+}
+
+.done {
+  margin-top: var(--gd-space-3);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+}
+
+.link {
+  font-weight: 700;
+  color: var(--gd-accent);
+}

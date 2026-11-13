@@ -119,9 +119,14 @@ async def jobs(
 
 @router.post("/request", response_model=CompanyAddRequestAccepted, status_code=202)
 async def request_company(
-    payload: CompanyAddRequestInput, db: DbSession, user: OptionalUser
+    payload: CompanyAddRequestInput, request: Request, db: DbSession, user: OptionalUser
 ) -> CompanyAddRequestAccepted:
-    record = await service.create_add_request(
+    """Open to signed-out visitors — someone searching before they apply is
+    exactly who finds the gap — so it is rate-limited per visitor, and a
+    moderator reviews every request before it becomes a company."""
+    identity = str(user.id) if user else (hash_ip(client_ip(request)) or "anon")
+    await rate_limit.enforce("company_request", identity, rate_limit.COMPANY_REQUEST)
+    outcome = await service.create_add_request(
         db,
         name=payload.name,
         website=payload.website,
@@ -130,4 +135,11 @@ async def request_company(
         user_id=user.id if user else None,
     )
     await db.commit()
-    return CompanyAddRequestAccepted(id=record.id, status=record.status)
+    if outcome.request is None:
+        return CompanyAddRequestAccepted(
+            id=None,
+            status="EXISTS",
+            message="이미 도감에 있는 회사입니다.",
+            existing_slug=outcome.existing.slug if outcome.existing else None,
+        )
+    return CompanyAddRequestAccepted(id=outcome.request.id, status=outcome.request.status)

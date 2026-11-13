@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -192,7 +193,13 @@ export function CompanySearch({
             <li className={styles.empty}>
               <p className={styles.emptyTitle}>아직 도감에 없는 회사입니다.</p>
               <p className={styles.emptyBody}>
-                새로운 흔적을 발견하셨나요? 회사를 등록 요청할 수 있습니다.
+                새로운 흔적을 발견하셨나요?{" "}
+                <Link
+                  href={`/search?q=${encodeURIComponent(query.trim())}`}
+                  className={styles.emptyLink}
+                >
+                  회사 등록 요청하기
+                </Link>
               </p>
             </li>
           )}
