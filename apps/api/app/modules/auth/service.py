@@ -8,7 +8,6 @@ after using the magic link keeps their reports, reputation, and handle.
 
 from __future__ import annotations
 
-import re
 import secrets
 from datetime import UTC, datetime
 from html import escape
@@ -27,15 +26,13 @@ from app.shared.errors import EmailDeliveryFailedError, UnauthorizedError
 
 log = get_logger(__name__)
 
-_HANDLE_SAFE = re.compile(r"[^a-z0-9]+")
 
-
-def _handle_from_email(email: str) -> str:
-    local = email.split("@", 1)[0].lower()
-    base = _HANDLE_SAFE.sub("", local)[:16] or "dodo"
-    # Random suffix: a handle is a public pseudonym and must not be a
-    # guessable transform of the user's email address.
-    return f"{base}_{secrets.token_hex(3)}"
+def _new_handle() -> str:
+    # A handle is a public pseudonym, and the privacy policy promises it
+    # cannot be inferred from the email address. It therefore takes no input.
+    # The old `<local part>_<hex>` form published the local part verbatim;
+    # migration b6f2d9e1c4a8 renamed those accounts.
+    return f"dodo_{secrets.token_hex(4)}"
 
 
 async def request_magic_link(session: AsyncSession, *, email: str, ip_hash: str | None) -> str:
@@ -75,7 +72,7 @@ async def consume_magic_link(session: AsyncSession, *, token: str) -> User:
     if user is None:
         user = User(
             email=record.email,
-            handle=_handle_from_email(record.email),
+            handle=_new_handle(),
             role=UserRole.USER,
             trust_state=TrustState.NEW,
             email_verified_at=now,
@@ -165,7 +162,7 @@ async def sign_in_with_google(session: AsyncSession, *, profile: GoogleProfile) 
     if user is None:
         user = User(
             email=profile.email,
-            handle=_handle_from_email(profile.email),
+            handle=_new_handle(),
             google_sub=profile.sub,
             role=UserRole.USER,
             trust_state=TrustState.NEW,

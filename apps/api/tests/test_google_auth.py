@@ -211,7 +211,8 @@ class TestAccountResolution:
     reputation split between two accounts."""
 
     async def test_first_google_sign_in_creates_the_account(self, fresh_db: None) -> None:
-        email = f"new-{uuid.uuid4().hex[:8]}@example.com"
+        marker = uuid.uuid4().hex[:8]
+        email = f"new{marker}@example.com"
         profile = google.GoogleProfile(
             sub=f"sub-{uuid.uuid4().hex}", email=email, email_verified=True
         )
@@ -220,8 +221,10 @@ class TestAccountResolution:
             await session.commit()
             assert user.google_sub == profile.sub
             assert user.email_verified_at is not None
-            # A handle is a pseudonym, not a transform of the address.
-            assert email.split("@")[0] not in user.handle or user.handle != email.split("@")[0]
+            # A handle is a pseudonym, not a transform of the address. This
+            # once read `A or B` with B always true, and let the local part
+            # through verbatim.
+            assert marker not in user.handle
             user_id = user.id
 
         async with SessionLocal() as session:
