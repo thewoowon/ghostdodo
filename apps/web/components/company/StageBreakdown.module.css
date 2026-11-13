@@ -78,3 +78,30 @@
   border: 1px dashed var(--gd-rule-strong);
   border-radius: var(--gd-radius-lg);
 }
+
+/* At phone width the 480px floor hid 응답 소요 behind a scroll nobody
+   knew was there — a metric that is not seen is not shown. Tighter cells
+   fit all four columns in 320px; the scroll stays as a last resort. */
+@media (max-width: 640px) {
+  .table {
+    min-width: 300px;
+  }
+
+  .table th,
+  .table td {
+    padding: var(--gd-space-3) var(--gd-space-2);
+  }
+
+  .table th:first-child {
+    padding-inline-start: var(--gd-space-3);
+  }
+
+  .table td:last-child,
+  .table th:last-child {
+    padding-inline-end: var(--gd-space-3);
+  }
+
+  .bar {
+    min-width: 64px;
+  }
+}

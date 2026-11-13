@@ -110,3 +110,16 @@
   color: var(--gd-ink-faint);
   font-size: var(--gd-text-sm);
 }
+
+/* The threshold table has three short columns; at phone width it fits once
+   the cells stop padding like a desktop table. */
+@media (max-width: 640px) {
+  .table {
+    min-width: 280px;
+  }
+
+  .table th,
+  .table td {
+    padding-inline: var(--gd-space-3);
+  }
+}

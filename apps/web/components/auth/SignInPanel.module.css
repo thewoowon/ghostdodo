@@ -80,6 +80,14 @@
   border-color: var(--gd-accent);
 }
 
+/* Side by side, a phone left the address field ~13 characters wide and
+   cut off what was typed. */
+@media (max-width: 480px) {
+  .emailRow {
+    flex-direction: column;
+  }
+}
+
 .submit {
   flex: none;
   padding: var(--gd-space-3) var(--gd-space-5);
