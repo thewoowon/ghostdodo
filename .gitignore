@@ -34,6 +34,8 @@ htmlcov/
 
 # local data
 infra/data/
+# Registry downloads for the company importer (DART CORPCODE.xml and the like)
+apps/api/.cache/
 
 # claude
 .claude/

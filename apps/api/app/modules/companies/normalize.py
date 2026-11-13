@@ -39,8 +39,12 @@ _WS = re.compile(r"\s+")
 
 def strip_legal_form(name: str) -> str:
     """Removes legal-entity markers. `(주)도도랩` and `주식회사 도도랩` both
-    become `도도랩`."""
-    without = _PAREN_FORMS.sub(" ", name)
+    become `도도랩`.
+
+    NFKC first: registries write `（주）` in full-width as often as `(주)`,
+    and a marker the pattern cannot see survives into the display name and
+    splits one company into two match keys."""
+    without = _PAREN_FORMS.sub(" ", unicodedata.normalize("NFKC", name))
     without = _LEGAL_KO_RE.sub(" ", without)
     without = _LEGAL_EN_RE.sub(" ", without)
     return _WS.sub(" ", without).strip()

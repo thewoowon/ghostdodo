@@ -35,7 +35,16 @@ from sqlalchemy import func, select
 class TestNormalization:
     @pytest.mark.parametrize(
         "raw",
-        ["주식회사 카카오", "(주)카카오", "카카오(주)", "카카오", "카카오 주식회사"],
+        [
+            "주식회사 카카오",
+            "(주)카카오",
+            "카카오(주)",
+            "카카오",
+            "카카오 주식회사",
+            # Full-width, as NPS often writes it. Missed, this one split off
+            # as "주카카오" and kept "（주）" in its display name.
+            "（주）카카오",
+        ],
     )
     def test_legal_forms_collapse_to_one_key(self, raw: str) -> None:
         """All five spellings must dedupe to a single company — otherwise the
@@ -141,6 +150,57 @@ class TestSourceParsers:
         records = list(nps.parse(csv_path, encoding="utf-8-sig", min_headcount=20))
         assert [r.legal_name for r in records] == ["큰회사"]
 
+    def test_nps_skips_withdrawn_workplaces_and_sole_proprietors(self, tmp_path: Path) -> None:
+        """Recent releases carry status and form codes, with the legend in
+        the header. A closed workplace is nowhere anyone applies, and a 개인
+        workplace name is often a person's name."""
+        csv_path = tmp_path / "nps.csv"
+        csv_path.write_text(
+            "사업장명,사업장가입상태코드 1 등록 2 탈퇴,사업장형태구분코드 1 법인 2 개인,가입자수\n"
+            "운영중법인(주),1,1,120\n"
+            "폐업법인(주),2,1,120\n"
+            "홍길동치과,1,2,25\n",
+            encoding="utf-8-sig",
+        )
+        default = list(nps.parse(csv_path, encoding="utf-8-sig"))
+        assert [r.legal_name for r in default] == ["운영중법인(주)"]
+
+        widened = list(nps.parse(csv_path, encoding="utf-8-sig", include_sole_proprietors=True))
+        assert [r.legal_name for r in widened] == ["운영중법인(주)", "홍길동치과"]
+
+    def test_nps_folds_day_labour_sites_into_the_contractor(self, tmp_path: Path) -> None:
+        """A contractor registers each site's day labour as a workplace;
+        listing every site would bury the company under its own projects."""
+        csv_path = tmp_path / "nps.csv"
+        csv_path.write_text(
+            "사업장명,가입자수\n"
+            "세안이엔씨 /일용/삼성서울병원 리모델링공사 2차,40\n"
+            "호연디자인-(일용)쿠팡 부산 물류센터 내장공사,40\n"
+            "（주）하나전설/일용/시티오씨엘 6단지 신축공사,40\n"
+            "일용건설(주),40\n",
+            encoding="utf-8-sig",
+        )
+        names = [r.legal_name for r in nps.parse(csv_path, encoding="utf-8-sig")]
+        assert names == ["세안이엔씨", "호연디자인", "（주）하나전설", "일용건설(주)"]
+
+    @pytest.mark.parametrize(
+        ("workplace", "employer"),
+        [
+            ("케이씨이앤씨/상용/P4 Ph4(상동) 마감공사 중 Ph4 GAS공사 1공구", "케이씨이앤씨"),
+            ("기승건설 -(상용)전주동서학 공동주택 건설공사", "기승건설"),
+            ("대륭개발-(건설일용)충북혁신 B-9BL 아파트 건설공사 1공구", "대륭개발"),
+            ("서동건설산업 -건설일용관리", "서동건설산업"),
+            ("강산이앤에쓰-(현장)분당동 수내2동 폐기물 수거 현장", "강산이앤에쓰"),
+            ("화성시청/장애인 일자리 사업", "화성시청"),
+            ("마포구청(일반형일자리/전일제)", "마포구청"),
+            ("대신정보통신(주)", "대신정보통신(주)"),
+        ],
+    )
+    def test_nps_employer_name_drops_the_site_or_programme(
+        self, workplace: str, employer: str
+    ) -> None:
+        assert nps.employer_name(workplace) == employer
+
     def test_nps_tolerates_alternate_column_names(self, tmp_path: Path) -> None:
         """Header names have varied between data.go.kr releases."""
         csv_path = tmp_path / "nps.csv"
@@ -226,6 +286,39 @@ class TestImport:
                 assert kept.directory_source is None
         finally:
             await _cleanup("충돌데모회사")
+
+    async def test_update_only_enriches_but_never_creates(self, fresh_db: None) -> None:
+        """DART keeps delisted tickers; run update-only it may add a ticker
+        to a company NPS already holds, but must not resurrect the dead."""
+        prefix = "업데이트전용테스트"
+        try:
+            async with SessionLocal() as session:
+                await import_records(session, [_record(f"{prefix}운영중")])
+                stats = await import_records(
+                    session,
+                    [
+                        _record(f"{prefix}운영중", extra_aliases=("123456",)),
+                        _record(f"{prefix}상장폐지"),
+                    ],
+                    create=False,
+                )
+            assert (stats.created, stats.updated, stats.skipped) == (0, 1, 1)
+            async with SessionLocal() as session:
+                names = (
+                    (
+                        await session.execute(
+                            select(Company.display_name_ko, Company.aliases).where(
+                                Company.legal_name_ko.like(f"{prefix}%")
+                            )
+                        )
+                    )
+                    .tuples()
+                    .all()
+                )
+            assert [n for n, _ in names] == [f"{prefix}운영중"]
+            assert "123456" in names[0][1]
+        finally:
+            await _cleanup(prefix)
 
     async def test_slug_collisions_get_a_suffix(self, fresh_db: None) -> None:
         try:

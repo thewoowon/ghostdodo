@@ -1,8 +1,9 @@
 """Import company directory metadata from a lawful public registry.
 
-    # DART — official names for listed and reporting companies
+    # DART — official names and tickers. --update-only, after NPS: DART keeps
+    # delisted companies' tickers, so on its own it would create the dead.
     export DART_API_KEY=...
-    uv run python -m app.scripts.import_companies dart --listed-only
+    uv run python -m app.scripts.import_companies --update-only dart --listed-only
 
     # 국민연금 — broad coverage including private employers
     uv run python -m app.scripts.import_companies nps ~/Downloads/nps.csv \
@@ -29,7 +30,7 @@ from app.modules.companies.sources import dart, nps
 CACHE_DIR = Path(".cache")
 
 
-async def _run(records: list[DirectoryRecord], *, dry_run: bool) -> None:
+async def _run(records: list[DirectoryRecord], *, dry_run: bool, update_only: bool) -> None:
     print(f"parsed {len(records)} records")
     if not records:
         return
@@ -43,7 +44,7 @@ async def _run(records: list[DirectoryRecord], *, dry_run: bool) -> None:
         return
 
     async with db_session() as session:
-        stats = await import_records(session, records)
+        stats = await import_records(session, records, create=not update_only)
     print(f"\n{stats}")
     print("note: identity only — no metrics were created for these companies")
     await dispose_engine()
@@ -53,6 +54,11 @@ async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true", help="parse but do not write")
     parser.add_argument("--limit", type=int, default=0, help="import at most N records")
+    parser.add_argument(
+        "--update-only",
+        action="store_true",
+        help="enrich companies that already exist; create none (use for DART)",
+    )
     sub = parser.add_subparsers(dest="source", required=True)
 
     dart_parser = sub.add_parser("dart", help="금융감독원 DART corpCode")
@@ -73,6 +79,11 @@ async def main() -> int:
         type=int,
         default=0,
         help="skip workplaces below this subscriber count",
+    )
+    nps_parser.add_argument(
+        "--include-sole-proprietors",
+        action="store_true",
+        help="also import 개인 workplaces, whose names are often a person's name",
     )
 
     args = parser.parse_args()
@@ -99,13 +110,18 @@ async def main() -> int:
             print(f"no such file: {args.file}", file=sys.stderr)
             return 1
         records = list(
-            nps.parse(args.file, encoding=args.encoding, min_headcount=args.min_headcount)
+            nps.parse(
+                args.file,
+                encoding=args.encoding,
+                min_headcount=args.min_headcount,
+                include_sole_proprietors=args.include_sole_proprietors,
+            )
         )
 
     if args.limit:
         records = records[: args.limit]
 
-    await _run(records, dry_run=args.dry_run)
+    await _run(records, dry_run=args.dry_run, update_only=args.update_only)
     return 0
 
 

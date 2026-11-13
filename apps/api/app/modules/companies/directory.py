@@ -94,9 +94,18 @@ async def _unique_slug(session: AsyncSession, base: str) -> str:
 
 
 async def upsert_record(
-    session: AsyncSession, record: DirectoryRecord, *, now: datetime | None = None
+    session: AsyncSession,
+    record: DirectoryRecord,
+    *,
+    now: datetime | None = None,
+    create: bool = True,
 ) -> str:
-    """Create or update one company. Returns 'created' | 'updated' | 'skipped'."""
+    """Create or update one company. Returns 'created' | 'updated' | 'skipped'.
+
+    With `create=False` a record only enriches a company that already exists.
+    DART keeps delisted companies' tickers, so its listed set is a third
+    stale; matched against companies another registry already holds, it adds
+    official names and ticker aliases without resurrecting the dead."""
     now = now or datetime.now(UTC)
     key = match_key(record.legal_name)
     if not key:
@@ -107,6 +116,9 @@ async def upsert_record(
     ).scalar_one_or_none()
 
     aliases = generate_aliases(record.legal_name, record.name_en, *record.extra_aliases)
+
+    if existing is None and not create:
+        return "skipped"
 
     if existing is None:
         base_slug = slugify(record.legal_name, fallback=f"co-{key[:12]}")
@@ -164,6 +176,7 @@ async def import_records(
     records: list[DirectoryRecord],
     *,
     batch_size: int = 500,
+    create: bool = True,
 ) -> ImportStats:
     """Imports a batch of registry records, committing periodically so a large
     import can be resumed rather than restarted."""
@@ -171,7 +184,7 @@ async def import_records(
     now = datetime.now(UTC)
 
     for index, record in enumerate(records, start=1):
-        outcome = await upsert_record(session, record, now=now)
+        outcome = await upsert_record(session, record, now=now, create=create)
         setattr(stats, outcome, getattr(stats, outcome) + 1)
 
         if index % batch_size == 0:
