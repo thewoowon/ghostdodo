@@ -42,9 +42,16 @@ EXPOSE 8000
 
 # Railway injects PORT.
 #
+# Migrations run here, before uvicorn, as well as in railway.json's
+# pre-deploy step. Railway did not read railway.json for this service, so
+# the pre-deploy step never ran and production served an empty schema. Here
+# it cannot be skipped. `upgrade head` is a no-op when current, and `&&`
+# keeps a failed migration from serving traffic. It assumes one replica;
+# with more, move it back to pre-deploy only.
+#
 # Deliberately no --proxy-headers: forwarding is interpreted in `client_ip`,
 # which counts hops from the right of X-Forwarded-For using
 # TRUSTED_PROXY_HOPS. Letting uvicorn rewrite the peer as well would leave
 # two different rules for the same question. Nothing else in the app reads
 # the request scheme, so there is nothing for --proxy-headers to fix.
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --no-server-header"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --no-server-header"]
