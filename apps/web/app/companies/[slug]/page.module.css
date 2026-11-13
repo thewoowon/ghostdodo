@@ -157,9 +157,13 @@
   max-width: var(--gd-max-width-prose);
 }
 
+/* Padding enlarges the touch target past 44px; the negative margin keeps
+   the spacing it had (see JobCardList). */
 .correctionLink {
   display: inline-block;
-  margin-top: var(--gd-space-3);
+  margin-top: calc(var(--gd-space-3) - 10px);
+  margin-bottom: -10px;
+  padding-block: 10px;
   font-size: var(--gd-text-sm);
   font-weight: 600;
   color: var(--gd-accent);
@@ -201,6 +205,9 @@
 }
 
 .jobsLink {
+  display: inline-block;
+  padding-block: 10px;
+  margin-block: -10px;
   font-size: var(--gd-text-sm);
   font-weight: 600;
   color: var(--gd-accent);

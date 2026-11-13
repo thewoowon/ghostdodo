@@ -62,6 +62,17 @@
   font-size: var(--gd-text-lg);
 }
 
+/* These three links are 21-23px of text, short of a 44px touch target. The
+   padding enlarges what a finger can hit, and the matching negative margin
+   keeps the card's spacing as it was. */
+.titleLink,
+.companyLink,
+.detailLink {
+  display: inline-block;
+  padding-block: 10px;
+  margin-block: -10px;
+}
+
 .titleLink:hover {
   color: var(--gd-accent);
 }
