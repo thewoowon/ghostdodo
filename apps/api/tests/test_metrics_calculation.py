@@ -8,12 +8,15 @@ These encode product promises, not just code behaviour:
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from app.core.methodology import get_methodology
 from app.modules.metrics.calculator import compute
+from app.modules.metrics.models import CompanyMetricSnapshot
 from app.modules.metrics.qualification import Disqualified, Observation, qualify
+from app.modules.metrics.schemas import CompanyMetricsOut
 from app.shared.enums import (
     HiringStage,
     MetricEligibility,
@@ -287,6 +290,32 @@ class TestAggregation:
         stages = [s.stage for s in metrics.stage_breakdown]
         assert stages == [HiringStage.APPLICATION, HiringStage.FINAL_INTERVIEW]
         assert sum(s.qualified_n for s in metrics.stage_breakdown) == metrics.qualified_n
+
+    def test_snapshot_read_restores_hiring_order(self) -> None:
+        """JSONB hands keys back sorted by length, so a snapshot read in
+        storage order lists 코딩/필기 before 지원."""
+        snapshot = CompanyMetricSnapshot(
+            company_id=uuid.uuid4(),
+            window=MetricWindow.W12M,
+            window_start=None,
+            window_end=NOW.date(),
+            qualified_n=3,
+            verified_ratio=1.0,
+            promised_timeline_n=0,
+            eligibility=MetricEligibility.INSUFFICIENT_DATA,
+            stage_breakdown={
+                HiringStage.TEST.value: {"qualified_n": 1},
+                HiringStage.FINAL_INTERVIEW.value: {"qualified_n": 1},
+                HiringStage.APPLICATION.value: {"qualified_n": 1},
+            },
+            methodology_version=METHODOLOGY.version,
+        )
+        out = CompanyMetricsOut.from_snapshot(snapshot)
+        assert [s.stage for s in out.stage_breakdown] == [
+            HiringStage.APPLICATION.value,
+            HiringStage.TEST.value,
+            HiringStage.FINAL_INTERVIEW.value,
+        ]
 
 
 class TestMethodologyConfiguration:

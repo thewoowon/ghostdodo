@@ -8,7 +8,7 @@ from typing import Any, cast
 from pydantic import BaseModel
 
 from app.modules.metrics.models import CompanyMetricSnapshot
-from app.shared.enums import MetricEligibility, MetricWindow
+from app.shared.enums import HiringStage, MetricEligibility, MetricWindow
 
 
 class StageMetricsOut(BaseModel):
@@ -47,6 +47,9 @@ class CompanyMetricsOut(BaseModel):
     @classmethod
     def from_snapshot(cls, snapshot: CompanyMetricSnapshot) -> CompanyMetricsOut:
         raw = cast("Mapping[str, Mapping[str, Any]]", snapshot.stage_breakdown or {})
+        # JSONB does not keep key order (it sorts by length, then bytes), so
+        # the hiring order the calculator wrote has to be restored on read.
+        rank = {stage.value: i for i, stage in enumerate(HiringStage.ordered())}
         breakdown = [
             StageMetricsOut(
                 stage=stage,
@@ -55,7 +58,7 @@ class CompanyMetricsOut(BaseModel):
                 ghost_rate=data.get("ghost_rate"),
                 median_response_days=data.get("median_response_days"),
             )
-            for stage, data in raw.items()
+            for stage, data in sorted(raw.items(), key=lambda item: rank.get(item[0], len(rank)))
         ]
         return cls(
             company_id=snapshot.company_id,
