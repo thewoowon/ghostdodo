@@ -123,8 +123,8 @@ for review time.
 2. Evidence upload in production, end to end. CORS is confirmed. What
    remains is a real submission with an attachment, made by the user since
    it needs their inbox. Reject the test report afterwards.
-3. Smaller mobile leftover: `공고 자세히` and the inline company links on
-   job cards are 21–23px tall. (`/me/reports` now names the company.)
+3. Mobile leftovers are closed: job-card and company-page links now have
+   44px touch targets (fe1cc0e).
 
 Production access from this machine: the SSH key `aepeul-mac` is
 registered with Railway, and this directory is `railway link`ed to
