@@ -52,7 +52,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const company = await getCompany(slug);
     return {
       title: `${company.display_name_ko} 채용 응답 기록`,
-      description: `${company.display_name_ko}의 결과 통보율과 응답 시간을 지원자 기록으로 확인하세요.`,
+      // A shared link's preview must not promise rates a held-back page
+      // does not show.
+      description: company.published
+        ? `${company.display_name_ko}의 결과 통보율과 응답 시간을 지원자 기록으로 확인하세요.`
+        : `${company.display_name_ko}의 채용 응답 기록을 모으고 있습니다. 공개 준비 중입니다.`,
       alternates: { canonical: `/companies/${company.slug}` },
       // A held-back page has nothing to rank for yet, and an indexed
       // "공개 준비 중" for a real company is not something to leave in
