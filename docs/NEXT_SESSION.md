@@ -98,11 +98,19 @@ for review time.
 
 ## Next session starts here
 
-1. **Real-company directory: decide with the user** whether to import
-   identity-only records before legal review, and if so behind what
-   publication switch. Public report cards show the moment a report is
-   verified, with no sample bar, so an import without a switch would
-   publish individual records about real companies.
+1. **Import real companies (decided 2026-11-13).** The publication gate is
+   built (`PUBLISH_REAL_COMPANIES`, off; see CLAUDE.md). Steps:
+   - The gate commit must be live in production *before* any import.
+   - Inputs come from the user: a DART API key (opendart.fss.or.kr), and
+     the 국민연금 가입 사업장 내역 CSV, downloaded from data.go.kr dataset
+     15083277 in a browser. Scripting the portal's internal download API was
+     refused by the permission classifier, so do not retry it.
+   - Run locally with `--dry-run` first and show the user the count and a
+     sample: `import_companies dart --listed-only`, then
+     `import_companies nps <csv> --min-headcount 20`.
+   - Run in production through `railway ssh` with `PYTHONPATH=/app`. The
+     CSV has to reach the container first.
+   - Afterwards, a real company's page must show `공개 준비 중` and `noindex`.
 2. Evidence upload in production, end to end. CORS is confirmed. What
    remains is a real submission with an attachment, made by the user since
    it needs their inbox. Reject the test report afterwards.
