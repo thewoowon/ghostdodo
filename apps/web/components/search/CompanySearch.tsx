@@ -181,7 +181,7 @@ export function CompanySearch({
                   <span className={styles.optionMeta}>
                     {company.industry ?? "업종 미상"}
                     {company.name_en ? ` · ${company.name_en}` : ""}
-                    {` · 기록 ${company.public_report_count}건`}
+                    {company.published && ` · 기록 ${company.public_report_count}건`}
                   </span>
                 </span>
               </button>

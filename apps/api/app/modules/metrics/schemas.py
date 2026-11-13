@@ -43,6 +43,10 @@ class CompanyMetricsOut(BaseModel):
     stage_breakdown: list[StageMetricsOut]
     methodology_version: str
     computed_at: datetime | None = None
+    # True when the launch gate holds the company back: every figure above is
+    # zeroed or null because it is not being served, not because nothing was
+    # observed. Clients must not render the numbers of a withheld response.
+    withheld: bool = False
 
     @classmethod
     def from_snapshot(cls, snapshot: CompanyMetricSnapshot) -> CompanyMetricsOut:
@@ -77,6 +81,17 @@ class CompanyMetricsOut(BaseModel):
             methodology_version=snapshot.methodology_version,
             computed_at=snapshot.computed_at,
         )
+
+    @classmethod
+    def withheld_for(
+        cls, *, company_id: uuid.UUID, window: MetricWindow, methodology_version: str
+    ) -> CompanyMetricsOut:
+        """For a company the launch gate holds back. Built from `empty`, so
+        no field can carry a real figure by accident."""
+        out = cls.empty(
+            company_id=company_id, window=window, methodology_version=methodology_version
+        )
+        return out.model_copy(update={"withheld": True})
 
     @classmethod
     def empty(

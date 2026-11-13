@@ -154,6 +154,7 @@ services rather than being pasted copies.
 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` | from step 1 |
 | `S3_FORCE_PATH_STYLE` | `false` |
 | `ENABLE_JOBS` | `true` |
+| `PUBLISH_REAL_COMPANIES` | `false` until Korean legal review closes |
 | `RATE_LIMIT_ENABLED` | `true` |
 | `LOG_LEVEL` | `INFO` |
 

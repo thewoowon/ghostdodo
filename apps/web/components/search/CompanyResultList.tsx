@@ -45,10 +45,14 @@ export function CompanyResultList({
                 {company.name_en ? ` · ${company.name_en}` : ""}
               </span>
             </span>
-            {/* Report count is a volume figure, never presented as a rate. */}
-            <span className={`${styles.count} gd-tabular`}>
-              기록 {company.public_report_count}건
-            </span>
+            {/* Report count is a volume figure, never presented as a rate.
+                A held-back company shows none: even a count says how much
+                has been filed about it. */}
+            {company.published && (
+              <span className={`${styles.count} gd-tabular`}>
+                기록 {company.public_report_count}건
+              </span>
+            )}
           </Link>
         </li>
       ))}

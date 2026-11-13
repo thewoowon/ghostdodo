@@ -15,6 +15,7 @@ from app.modules.companies.schemas import (
     CompanyAddRequestInput,
     CompanyDetail,
     CompanySummary,
+    publishes,
 )
 from app.modules.jobs import service as jobs_service
 from app.modules.jobs.router import require_jobs_enabled
@@ -58,8 +59,12 @@ async def metrics(
     response is an explicit insufficient-data shape — never a zeroed one,
     which would read as '0% response rate'."""
     company = await service.get_company_by_slug(db, slug)
-    snapshot = await get_snapshot(db, company.id, window)
     methodology = get_methodology()
+    if not publishes(company.is_demo):
+        return CompanyMetricsOut.withheld_for(
+            company_id=company.id, window=window, methodology_version=methodology.version
+        )
+    snapshot = await get_snapshot(db, company.id, window)
     if snapshot is None:
         return CompanyMetricsOut.empty(
             company_id=company.id, window=window, methodology_version=methodology.version
@@ -73,8 +78,12 @@ async def reports(
     db: DbSession,
     limit: Annotated[int, Query(ge=1, le=50)] = 20,
 ) -> list[PublicReportCard]:
-    """Only publicly-visible statuses, and never the reporter."""
+    """Only publicly-visible statuses, and never the reporter. Nothing at all
+    for a company the launch gate holds back: a verified card is published
+    the moment it is verified, with no sample bar in between."""
     company = await service.get_company_by_slug(db, slug)
+    if not publishes(company.is_demo):
+        return []
     rows = await db.execute(
         select(RecruitmentExperience)
         .where(

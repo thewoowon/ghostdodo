@@ -2,10 +2,18 @@ from __future__ import annotations
 
 import uuid
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
+from app.core.config import settings
 from app.shared.enums import CompanyClaimState, CompanySizeBand
 from app.shared.schemas import ORMModel
+
+
+def publishes(is_demo: bool) -> bool:
+    """Whether what a company has been observed doing may be served
+    publicly. The single place the launch gate is decided — every public
+    company surface asks this, not `is_demo` or the setting directly."""
+    return is_demo or settings.publish_real_companies
 
 
 class CompanySummary(ORMModel):
@@ -19,6 +27,17 @@ class CompanySummary(ORMModel):
     industry: str | None = None
     public_report_count: int
     is_demo: bool
+    # False while the launch gate holds this company back (see
+    # `publishes`). Clients render "공개 준비 중" and nothing observed.
+    published: bool = False
+
+    @model_validator(mode="after")
+    def _apply_launch_gate(self) -> CompanySummary:
+        self.published = publishes(self.is_demo)
+        if not self.published:
+            # Even a count says how much has been filed about a company.
+            self.public_report_count = 0
+        return self
 
 
 class CompanyDetail(CompanySummary):

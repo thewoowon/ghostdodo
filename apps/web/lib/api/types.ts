@@ -20,6 +20,11 @@ export type CompanySummary = {
   public_report_count: number;
   /** Fixture data. The UI must label it as sample content. */
   is_demo: boolean;
+  /** False while the launch gate (docs/08 §11) holds a real company back.
+   *  Render "공개 준비 중" and nothing observed: no rates, no cards, no
+   *  count — the API already zeroes them, and they must not be shown as
+   *  if they were real zeros. */
+  published: boolean;
 };
 
 export type CompanyDetail = CompanySummary & {
@@ -59,6 +64,9 @@ export type CompanyMetrics = {
   stage_breakdown: StageMetrics[];
   methodology_version: string;
   computed_at: string | null;
+  /** True when the launch gate holds the company back. Every figure is
+   *  zeroed because it is not served, not because nothing was observed. */
+  withheld: boolean;
 };
 
 /** Cursor page. `next_cursor` is null on the last page. */

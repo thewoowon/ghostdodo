@@ -38,6 +38,16 @@ reports establish how it *behaves*. `TestImportCreatesNoMetrics` guards it.
 The same rule covers job postings — a posting says a company is hiring and
 nothing more (`TestPostingsCreateNoMetrics`).
 
+**A real company publishes nothing until the launch gate opens.** While
+`PUBLISH_REAL_COMPANIES` is off, a non-demo company can be found and
+reported on, but no rate, no report card, and no report count about it
+reaches any public response. Its page shows `공개 준비 중` and is
+`noindex`. This covers more than the sample bar does: a verified card is
+public the moment it is verified, with no n in between. `publishes()` in
+`companies/schemas.py` is the only place that decides it, and
+`tests/test_publication.py` guards it. Never turn the switch on before the
+user says Korean legal review is done.
+
 **Standing is never awarded for what a report said.** This governs the
 award table, the rank thresholds, *and* the badge rules in
 `reputation/badges.py` — a badge keyed on silence found or companies accused
@@ -240,9 +250,13 @@ by hand through the mailbox. The privacy policy says exactly that rather than
 promising a button that does not exist — if you build the endpoint, the
 wording has to change with it.
 
-Real company data has **not** been imported yet — this is deliberate, pending
-that review. Development runs on fictional fixtures (`pnpm api:seed`), all
-flagged `is_demo` and labelled `샘플 데이터` in the UI.
+On 2026-11-13 the user decided to **import real companies before review,
+publish nothing about them** (see the rule above). In production only the
+five demo companies could be reported on, so not one real record could be
+collected. Imports are identity only: DART listed companies, and 국민연금
+employers with at least 20 members. Demo fixtures (`pnpm api:seed`) stay
+flagged `is_demo`, are labelled `샘플 데이터`, and publish either way. Counsel
+has the question as Q8 in `docs/legal/REVIEW_REQUEST.md`.
 
 Phase 4 is now visible: `/me` renders rank, both ledgers, and badges from
 the engine that was already running. `pnpm api:seed` awards standing through

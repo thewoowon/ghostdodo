@@ -7,6 +7,7 @@ import { VerdictBadge } from "@/components/company/VerdictBadge";
 import { ApplyButton } from "@/components/jobs/ApplyButton";
 import { load } from "@/lib/api/load";
 import { getCompanyMetrics, getJob } from "@/lib/api/queries";
+import { UnpublishedNotice } from "@/components/company/UnpublishedNotice";
 import { WINDOW_LABELS } from "@/lib/domain";
 import { jobClosing, jobFacets, sourceName } from "@/lib/format/jobs";
 import {
@@ -60,8 +61,12 @@ export default async function JobPage({ params }: Props) {
   // Fetched separately and allowed to fail on its own. The response record is
   // the reason this page exists, but a metrics outage must never be what
   // stops someone from applying.
-  const metricsResult = await load(() => getCompanyMetrics(job.company.slug));
-  const metrics = metricsResult.ok ? metricsResult.data : null;
+  // A company the launch gate holds back has no record to show, so it is
+  // not even asked for.
+  const metricsResult = job.company.published
+    ? await load(() => getCompanyMetrics(job.company.slug))
+    : null;
+  const metrics = metricsResult?.ok ? metricsResult.data : null;
   const verdict = metrics
     ? responseVerdict(metrics.response_rate, metrics.eligibility)
     : null;
@@ -137,7 +142,9 @@ export default async function JobPage({ params }: Props) {
           {verdict && <VerdictBadge verdict={verdict} />}
         </div>
 
-        {metrics === null ? (
+        {!job.company.published ? (
+          <UnpublishedNotice compact />
+        ) : metrics === null ? (
           <p className={styles.recordBody}>
             지금은 이 회사의 응답 기록을 불러오지 못했습니다.{" "}
             <Link href={`/companies/${job.company.slug}`} className={styles.recordLink}>

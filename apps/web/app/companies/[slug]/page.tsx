@@ -12,6 +12,7 @@ import { CorrectionForm } from "@/components/company/CorrectionForm";
 import { MetricCard } from "@/components/company/MetricCard";
 import { StageBreakdown } from "@/components/company/StageBreakdown";
 import { ReportCardList } from "@/components/company/ReportCardList";
+import { UnpublishedNotice } from "@/components/company/UnpublishedNotice";
 import { VerdictBadge } from "@/components/company/VerdictBadge";
 import { JobCardList } from "@/components/jobs/JobCardList";
 import { decodeRouteParam } from "@/lib/route-params";
@@ -53,6 +54,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `${company.display_name_ko} 채용 응답 기록`,
       description: `${company.display_name_ko}의 결과 통보율과 응답 시간을 지원자 기록으로 확인하세요.`,
       alternates: { canonical: `/companies/${company.slug}` },
+      // A held-back page has nothing to rank for yet, and an indexed
+      // "공개 준비 중" for a real company is not something to leave in
+      // search results.
+      ...(company.published ? {} : { robots: { index: false, follow: true } }),
       openGraph: {
         title: `${company.display_name_ko} — GhostDodo`,
         description: `${company.display_name_ko}의 채용 응답 기록`,
@@ -122,7 +127,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
             </p>
           </div>
         </div>
-        <VerdictBadge verdict={verdict} />
+        {company.published && <VerdictBadge verdict={verdict} />}
       </header>
 
       {company.is_demo && (
@@ -131,83 +136,89 @@ export default async function CompanyPage({ params, searchParams }: Props) {
         </p>
       )}
 
-      <nav className={styles.windowTabs} aria-label="집계 기간">
-        {WINDOWS.map((w) => (
-          <Link
-            key={w}
-            href={`/companies/${company.slug}?window=${w}`}
-            className={`${styles.windowTab} ${w === window ? styles.windowTabActive : ""}`}
-            aria-current={w === window ? "page" : undefined}
-          >
-            {WINDOW_LABELS[w]}
-          </Link>
-        ))}
-      </nav>
+      {company.published ? (
+        <>
+          <nav className={styles.windowTabs} aria-label="집계 기간">
+            {WINDOWS.map((w) => (
+              <Link
+                key={w}
+                href={`/companies/${company.slug}?window=${w}`}
+                className={`${styles.windowTab} ${w === window ? styles.windowTabActive : ""}`}
+                aria-current={w === window ? "page" : undefined}
+              >
+                {WINDOW_LABELS[w]}
+              </Link>
+            ))}
+          </nav>
 
-      <section className={styles.metrics} aria-label="핵심 지표">
-        <MetricCard
-          label="결과 통보율"
-          value={formatRate(metrics.response_rate)}
-          caption="합격·불합격 등 명시적 결과를 받은 비율"
-          tone="alive"
-          icon="response"
-        />
-        <MetricCard
-          label="무응답률"
-          value={formatRate(metrics.ghost_rate)}
-          caption="관측 기간이 지나도 결과를 받지 못한 비율"
-          tone="extinct"
-          icon="silence"
-        />
-        <MetricCard
-          label="응답 소요"
-          value={formatDays(metrics.median_response_days)}
-          caption="결과를 받은 경우의 중앙값"
-        />
-      </section>
+          <section className={styles.metrics} aria-label="핵심 지표">
+            <MetricCard
+              label="결과 통보율"
+              value={formatRate(metrics.response_rate)}
+              caption="합격·불합격 등 명시적 결과를 받은 비율"
+              tone="alive"
+              icon="response"
+            />
+            <MetricCard
+              label="무응답률"
+              value={formatRate(metrics.ghost_rate)}
+              caption="관측 기간이 지나도 결과를 받지 못한 비율"
+              tone="extinct"
+              icon="silence"
+            />
+            <MetricCard
+              label="응답 소요"
+              value={formatDays(metrics.median_response_days)}
+              caption="결과를 받은 경우의 중앙값"
+            />
+          </section>
 
-      {/* Sample size and window travel with every rate, always (docs/08 §8). */}
-      <p className={styles.provenance}>
-        <span className="gd-tabular">n={metrics.qualified_n}</span> ·{" "}
-        {windowLabel} ·{" "}
-        <span className="gd-tabular">
-          검증 비율 {Math.round(metrics.verified_ratio * 100)}%
-        </span>{" "}
-        · <strong>{ELIGIBILITY_LABELS[metrics.eligibility]}</strong> ·{" "}
-        <Link href="/methodology" className={styles.methodLink}>
-          측정 기준 {metrics.methodology_version}
-        </Link>
-      </p>
-      <p className={styles.eligibilityNote}>{ELIGIBILITY_NOTES[metrics.eligibility]}</p>
-
-      {metrics.promised_timeline_n > 0 && (
-        <section className={styles.promiseBlock} aria-label="약속 이행">
-          <h2 className={styles.h2}>결과 안내 예정일 약속</h2>
-          <p className={styles.promiseBody}>
-            회사가 결과 안내 예정일을 밝힌 기록{" "}
-            <span className="gd-tabular">{metrics.promised_timeline_n}건</span> 중,{" "}
-            {metrics.broken_promise_rate === null ? (
-              <>약속 이행 비율은 <strong>표본 부족</strong>으로 공개하지 않습니다.</>
-            ) : (
-              <>
-                안내 없이 예정일을 넘긴 비율은{" "}
-                <strong className="gd-tabular">
-                  {formatRate(metrics.broken_promise_rate)}
-                </strong>
-                입니다.
-              </>
-            )}
+          {/* Sample size and window travel with every rate, always (docs/08 §8). */}
+          <p className={styles.provenance}>
+            <span className="gd-tabular">n={metrics.qualified_n}</span> ·{" "}
+            {windowLabel} ·{" "}
+            <span className="gd-tabular">
+              검증 비율 {Math.round(metrics.verified_ratio * 100)}%
+            </span>{" "}
+            · <strong>{ELIGIBILITY_LABELS[metrics.eligibility]}</strong> ·{" "}
+            <Link href="/methodology" className={styles.methodLink}>
+              측정 기준 {metrics.methodology_version}
+            </Link>
           </p>
-        </section>
-      )}
+          <p className={styles.eligibilityNote}>{ELIGIBILITY_NOTES[metrics.eligibility]}</p>
 
-      <section aria-label="단계별 기록">
-        <h2 className={styles.h2}>
-          <FootprintMark size={20} className={styles.h2Mark} />
-          단계별 기록
-        </h2>
-        <StageBreakdown stages={metrics.stage_breakdown} />
-      </section>
+          {metrics.promised_timeline_n > 0 && (
+            <section className={styles.promiseBlock} aria-label="약속 이행">
+              <h2 className={styles.h2}>결과 안내 예정일 약속</h2>
+              <p className={styles.promiseBody}>
+                회사가 결과 안내 예정일을 밝힌 기록{" "}
+                <span className="gd-tabular">{metrics.promised_timeline_n}건</span> 중,{" "}
+                {metrics.broken_promise_rate === null ? (
+                  <>약속 이행 비율은 <strong>표본 부족</strong>으로 공개하지 않습니다.</>
+                ) : (
+                  <>
+                    안내 없이 예정일을 넘긴 비율은{" "}
+                    <strong className="gd-tabular">
+                      {formatRate(metrics.broken_promise_rate)}
+                    </strong>
+                    입니다.
+                  </>
+                )}
+              </p>
+            </section>
+          )}
+
+          <section aria-label="단계별 기록">
+            <h2 className={styles.h2}>
+              <FootprintMark size={20} className={styles.h2Mark} />
+              단계별 기록
+            </h2>
+            <StageBreakdown stages={metrics.stage_breakdown} />
+          </section>
+        </>
+      ) : (
+        <UnpublishedNotice />
+      )}
 
       {jobs.length > 0 && (
         <section aria-label="채용공고">
@@ -224,25 +235,29 @@ export default async function CompanyPage({ params, searchParams }: Props) {
         </section>
       )}
 
-      <section aria-label="최근 관측 기록">
-        <h2 className={styles.h2}>
-          <TimelineBone size={20} className={styles.h2Mark} />
-          최근 관측 기록
-        </h2>
-        <ReportCardList reports={reports} />
-      </section>
+      {company.published && (
+        <>
+          <section aria-label="최근 관측 기록">
+            <h2 className={styles.h2}>
+              <TimelineBone size={20} className={styles.h2Mark} />
+              최근 관측 기록
+            </h2>
+            <ReportCardList reports={reports} />
+          </section>
 
-      <section className={styles.correction}>
-        <h2 className={styles.correctionTitle}>사실관계가 다른가요?</h2>
-        <p className={styles.correctionBody}>
-          회사 관계자는 기록에 대한 정정을 요청할 수 있습니다. 정정 절차는
-          기록의 내용을 다루며, 작성자의 신원은 어떤 경우에도 공개되지 않습니다.
-        </p>
-        <CorrectionForm slug={company.slug} />
-        <Link href="/company-portal/claim" className={styles.correctionLink}>
-          정정 절차 자세히 보기
-        </Link>
-      </section>
+          <section className={styles.correction}>
+            <h2 className={styles.correctionTitle}>사실관계가 다른가요?</h2>
+            <p className={styles.correctionBody}>
+              회사 관계자는 기록에 대한 정정을 요청할 수 있습니다. 정정 절차는
+              기록의 내용을 다루며, 작성자의 신원은 어떤 경우에도 공개되지 않습니다.
+            </p>
+            <CorrectionForm slug={company.slug} />
+            <Link href="/company-portal/claim" className={styles.correctionLink}>
+              정정 절차 자세히 보기
+            </Link>
+          </section>
+        </>
+      )}
     </article>
   );
 }

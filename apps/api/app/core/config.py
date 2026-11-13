@@ -93,6 +93,13 @@ class Settings(BaseSettings):
     enable_jobs: bool = True
     enable_company_portal: bool = False
 
+    # The launch gate (docs/08 §11) for real companies. Off: a non-demo
+    # company exists, is searchable, and takes reports — which are moderated
+    # and aggregated as usual — but nothing it has been observed doing is
+    # served publicly. On only once Korean legal review of the privacy
+    # policy and terms has closed. Demo fixtures publish either way.
+    publish_real_companies: bool = False
+
     @property
     def is_production(self) -> bool:
         return self.app_env == "production"
