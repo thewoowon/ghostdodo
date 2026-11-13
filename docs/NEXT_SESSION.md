@@ -114,6 +114,13 @@ for review time.
    To refresh monthly, rerun the same two commands. The import upserts by
    match key; see `import_companies.py` for the flags. Upload files with
    `ssh … "cat > /tmp/x"` and delete them afterwards.
+1a. **Company add requests** (466374a): visitors request from search and
+   the wizard, and moderators decide at `/admin/companies`.
+   **Production has no usable moderator.** The only MODERATOR is the
+   `moderator@example.com` fixture, which cannot receive a magic link. Until
+   the operator's own account is promoted, neither the report queue nor
+   the request queue can be worked, so no real report can ever be
+   verified. Ask the user before writing the role.
 2. Evidence upload in production, end to end. CORS is confirmed. What
    remains is a real submission with an attachment, made by the user since
    it needs their inbox. Reject the test report afterwards.
