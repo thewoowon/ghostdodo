@@ -124,10 +124,13 @@ and takes CORS and CSRF with it. See `docs/DEPLOYMENT.md`.
 **`X-Forwarded-For` is read from the right, not the left.** The leftmost
 entry is whatever the caller sent, so trusting it lets anyone pick their own
 rate-limit bucket — or someone else's. `client_ip` counts
-`TRUSTED_PROXY_HOPS` entries back from the end (2 in production: Vercel,
-then Railway's edge). The container runs uvicorn *without* `--proxy-headers`
-so there is exactly one place that decides this. Get the number wrong and
-nothing visibly breaks: the site just shares one bucket.
+`TRUSTED_PROXY_HOPS` entries back from the end. The container runs uvicorn
+*without* `--proxy-headers` so there is exactly one place that decides
+this. Get it wrong and nothing visibly breaks: the site just shares one
+bucket. **It is wrong in production today.** The value 2 assumed "Vercel,
+then Railway's edge", but measured on 2026-11-13 the visitor's address does
+not reach the API at all. Railway's edge appears to overwrite the header.
+See `docs/NEXT_SESSION.md` before touching rate limits or `client_ip`.
 
 **`EMAIL_PROVIDER=console` writes a working sign-in to the log.** Same class
 of problem as `dev_token`, and `check_production_hardening` refuses to boot
