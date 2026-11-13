@@ -126,6 +126,13 @@ export type OwnReport = PublicReportCard & {
   evidence_count: number;
 };
 
+/** A row of `/me/reports`: the contributor's own record, so it names the
+ *  company. Public cards never carry this pairing with a reporter. */
+export type MyReport = OwnReport & {
+  company_slug: string;
+  company_name: string;
+};
+
 export type AuthProviders = {
   /** False until Google credentials are configured on the API. The sign-in
    *  page renders its button from this, never from its own env, so a

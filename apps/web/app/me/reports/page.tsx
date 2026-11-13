@@ -77,6 +77,12 @@ export default async function MyReportsPage() {
         <ul className={styles.list}>
           {reports.map((report) => (
             <li key={report.id} className={styles.card}>
+              <Link
+                href={`/companies/${report.company_slug}`}
+                className={styles.company}
+              >
+                {report.company_name}
+              </Link>
               <div className={styles.head}>
                 <span className={styles.status}>
                   {VERIFICATION_LABELS[report.verification_status]}

@@ -117,6 +117,14 @@ class TestVerticalSlice:
             report_id = draft.json()["id"]
             assert draft.json()["verification_status"] == "DRAFT"
 
+            # The contributor's own list names the company, or one card
+            # cannot be told from another.
+            mine = await client.get("/api/v1/me/reports")
+            assert mine.status_code == 200
+            row = next(r for r in mine.json() if r["id"] == report_id)
+            assert row["company_slug"] == slug
+            assert row["company_name"] == "검증테스트"
+
             # 6. Attach evidence privately.
             intent = await client.post(
                 f"/api/v1/reports/{report_id}/evidence/upload-intent",

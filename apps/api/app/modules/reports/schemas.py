@@ -109,3 +109,16 @@ class OwnReport(PublicReportCard):
     submitted_at: datetime | None
     created_at: datetime
     evidence_count: int = 0
+
+
+class MyReport(OwnReport):
+    """One row of `/me/reports`.
+
+    The contributor's own list names the company: without it, a list of
+    "개발 · 정규직" cards cannot tell one application from another. This is
+    the reporter seeing their own record, so naming the company here exposes
+    nothing about who reported what to anyone else.
+    """
+
+    company_slug: str
+    company_name: str

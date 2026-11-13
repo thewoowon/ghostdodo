@@ -12,7 +12,7 @@ from app.modules.companies.models import Company
 from app.modules.companies.schemas import CompanySummary
 from app.modules.evidence.models import Evidence
 from app.modules.reports.models import RecruitmentExperience
-from app.modules.reports.schemas import OwnReport
+from app.modules.reports.schemas import MyReport, OwnReport
 from app.modules.reputation import badges as badge_rules
 from app.modules.reputation.models import CreditLedger, ReputationEvent, UserBadge
 from app.modules.users.models import SavedCompany
@@ -84,27 +84,39 @@ async def profile(db: DbSession, user: CurrentUser) -> Profile:
     )
 
 
-@router.get("/reports", response_model=list[OwnReport])
+@router.get("/reports", response_model=list[MyReport])
 async def my_reports(
     db: DbSession, user: CurrentUser, limit: Annotated[int, Query(ge=1, le=100)] = 50
-) -> list[OwnReport]:
+) -> list[MyReport]:
     evidence_counts = (
         select(Evidence.experience_id, func.count(Evidence.id).label("n"))
         .group_by(Evidence.experience_id)
         .subquery()
     )
     rows = await db.execute(
-        select(RecruitmentExperience, func.coalesce(evidence_counts.c.n, 0))
+        select(
+            RecruitmentExperience,
+            func.coalesce(evidence_counts.c.n, 0),
+            Company.slug,
+            Company.display_name_ko,
+        )
+        .join(Company, Company.id == RecruitmentExperience.company_id)
         .outerjoin(evidence_counts, evidence_counts.c.experience_id == RecruitmentExperience.id)
         .where(RecruitmentExperience.user_id == user.id)
         .order_by(RecruitmentExperience.created_at.desc())
         .limit(limit)
     )
-    out: list[OwnReport] = []
-    for report, count in rows.all():
-        card = OwnReport.model_validate(report)
-        out.append(card.model_copy(update={"evidence_count": count}))
-    return out
+    return [
+        MyReport.model_validate(
+            {
+                **OwnReport.model_validate(report).model_dump(),
+                "evidence_count": count,
+                "company_slug": slug,
+                "company_name": name,
+            }
+        )
+        for report, count, slug, name in rows.all()
+    ]
 
 
 @router.get("/reputation", response_model=list[LedgerEntry])

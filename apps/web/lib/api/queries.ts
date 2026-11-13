@@ -9,7 +9,7 @@ import type {
   JobDetail,
   LedgerEntry,
   Methodology,
-  OwnReport,
+  MyReport,
   Paged,
   Profile,
   PublicReportCard,
@@ -99,8 +99,8 @@ export function getCompanyJobs(
 
 /** The signed-in user's own reports, including ones still under review.
  *  Never cached — a moderation decision must show up on the next load. */
-export function getMyReports(cookie?: string): Promise<OwnReport[]> {
-  return apiRequest<OwnReport[]>("/me/reports", {
+export function getMyReports(cookie?: string): Promise<MyReport[]> {
+  return apiRequest<MyReport[]>("/me/reports", {
     cache: "no-store",
     ...(cookie ? { cookie } : {}),
   });
