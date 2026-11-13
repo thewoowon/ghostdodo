@@ -1,0 +1,143 @@
+/* The header row needs ~700px once someone is signed in (brand, three
+   links, handle, 로그아웃, CTA), so the fold happens well above the 640px
+   shell breakpoint. 768px tablets keep the row. */
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-2);
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  gap: var(--gd-space-2);
+}
+
+.navLink {
+  padding: var(--gd-space-2) var(--gd-space-3);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-ink-muted);
+  border-radius: var(--gd-radius-sm);
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.navLink:hover {
+  color: var(--gd-ink);
+  background: var(--gd-paper-sunken);
+}
+
+.cta {
+  padding: var(--gd-space-2) var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-accent-ink);
+  background: var(--gd-accent);
+  border-radius: var(--gd-radius-pill);
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.cta:hover {
+  background: var(--gd-accent-hover);
+}
+
+/* ── Phone menu ──────────────────────────────────────────────────── */
+
+.toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-inline-end: calc(var(--gd-space-2) * -1);
+  color: var(--gd-ink);
+  background: none;
+  border: 0;
+  border-radius: var(--gd-radius-sm);
+  cursor: pointer;
+}
+
+/* Touch browsers keep :hover after a tap, which would leave the closed
+   toggle looking pressed. */
+@media (hover: hover) {
+  .toggle:hover {
+    background: var(--gd-paper-sunken);
+  }
+}
+
+/* Anchored to the sticky header, not the viewport: the header's
+   backdrop-filter makes it the containing block for fixed descendants, so
+   `position: fixed` here would be clipped to the header's own box. */
+.panel {
+  position: absolute;
+  top: 100%;
+  inset-inline: 0;
+  z-index: 1;
+  background: var(--gd-paper);
+  border-bottom: 1px solid var(--gd-rule);
+  box-shadow: var(--gd-shadow-card);
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--gd-space-2) var(--gd-space-3);
+}
+
+.menuLink {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: var(--gd-space-3) var(--gd-space-2);
+  font-size: var(--gd-text-base);
+  font-weight: 600;
+  color: var(--gd-ink);
+  border-radius: var(--gd-radius-sm);
+}
+
+.menuLink:hover {
+  background: var(--gd-paper-sunken);
+}
+
+.menuLink[aria-current="page"] {
+  color: var(--gd-accent);
+}
+
+.rule {
+  margin: var(--gd-space-2) 0;
+  border: 0;
+  border-top: 1px solid var(--gd-rule);
+}
+
+.scrim {
+  position: absolute;
+  top: 100%;
+  inset-inline: 0;
+  height: 100dvh;
+  background: rgb(20 17 14 / 0.24);
+}
+
+@media (max-width: 760px) {
+  .inline {
+    display: none;
+  }
+
+  .toggle {
+    display: inline-flex;
+  }
+}
+
+/* Never strand an open panel on a screen that has the inline row. */
+@media (min-width: 761px) {
+  .panel,
+  .scrim {
+    display: none;
+  }
+}

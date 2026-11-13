@@ -8,8 +8,8 @@
  * brand — these tests catch that.
  *
  * The other half of the contract, the `aria-label` on the header's home link,
- * is not covered here: `SiteHeader` pulls in `SessionNav`, which calls
- * `useRouter`, and this suite has no app-router harness to give it.
+ * is covered in `site-nav.test.tsx`, which mocks the app router the header
+ * needs.
  */
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";

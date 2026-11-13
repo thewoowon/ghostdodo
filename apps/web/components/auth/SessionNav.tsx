@@ -9,21 +9,26 @@ import type { SessionUser } from "@/lib/api/types";
 
 import styles from "./SessionNav.module.css";
 
-type State =
+export type SessionState =
   | { status: "unknown" }
   | { status: "anonymous" }
   | { status: "signed-in"; user: SessionUser };
 
+export type Session = { state: SessionState; leave: () => Promise<void> };
+
 /**
- * Sign-in state in the header.
+ * Sign-in state for the header.
  *
  * Resolved in the browser rather than on the server on purpose: reading the
  * session during render would make every page in the app dynamic, and the
- * company pages are the SEO surface. Until the answer arrives nothing is
- * rendered, so the header never flashes "로그인" at someone who is.
+ * company pages are the SEO surface.
+ *
+ * A hook rather than a component so the header asks once and renders the
+ * answer in two places — the inline row on wide screens and the menu panel
+ * on phones — without a second `/auth/me` per navigation.
  */
-export function SessionNav() {
-  const [state, setState] = useState<State>({ status: "unknown" });
+export function useSession(): Session {
+  const [state, setState] = useState<SessionState>({ status: "unknown" });
   const router = useRouter();
   const pathname = usePathname();
 
@@ -48,18 +53,49 @@ export function SessionNav() {
     router.refresh();
   }, [router]);
 
+  return { state, leave };
+}
+
+type Props = {
+  session: Session;
+  /** `inline` sits in the header row; `menu` is a stacked block in the
+   *  phone menu, where every entry is a full-width tap target. */
+  layout?: "inline" | "menu";
+};
+
+/** Until the answer arrives nothing is rendered, so the header never
+ *  flashes "로그인" at someone who is signed in. */
+export function SessionNav({ session, layout = "inline" }: Props) {
+  const pathname = usePathname();
+  const { state, leave } = session;
+  const menu = layout === "menu";
+
   if (state.status === "unknown") {
-    return <span className={styles.placeholder} aria-hidden />;
+    return <span className={menu ? styles.menuPlaceholder : styles.placeholder} aria-hidden />;
   }
 
   if (state.status === "anonymous") {
     return (
       <Link
         href={`/sign-in?next=${encodeURIComponent(pathname)}`}
-        className={styles.signIn}
+        className={menu ? styles.menuItem : styles.signIn}
       >
         로그인
       </Link>
+    );
+  }
+
+  if (menu) {
+    return (
+      <>
+        <Link href="/me" className={styles.menuItem}>
+          내 활동
+          <span className={styles.menuHandle}>{state.user.handle}</span>
+        </Link>
+        <button type="button" onClick={leave} className={styles.menuItem}>
+          로그아웃
+        </button>
+      </>
     );
   }
 

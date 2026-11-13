@@ -47,3 +47,46 @@
   color: var(--gd-ink);
   background: var(--gd-paper-sunken);
 }
+
+/* ── Phone menu ──────────────────────────────────────────────────── */
+
+/* Holds one row's height so the panel does not grow under the thumb
+   when the session resolves. */
+.menuPlaceholder {
+  display: block;
+  min-height: 48px;
+}
+
+/* Matches SiteNav's menu rows; the link and the sign-out button share it. */
+.menuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gd-space-3);
+  width: 100%;
+  min-height: 48px;
+  padding: var(--gd-space-3) var(--gd-space-2);
+  font: inherit;
+  font-size: var(--gd-text-base);
+  font-weight: 600;
+  text-align: start;
+  color: var(--gd-ink);
+  background: none;
+  border: 0;
+  border-radius: var(--gd-radius-sm);
+  cursor: pointer;
+}
+
+.menuItem:hover {
+  background: var(--gd-paper-sunken);
+}
+
+.menuHandle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--gd-text-sm);
+  font-weight: 500;
+  color: var(--gd-ink-faint);
+}
