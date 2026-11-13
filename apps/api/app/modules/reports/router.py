@@ -18,7 +18,13 @@ from app.modules.evidence.schemas import (
     UploadIntentOutput,
 )
 from app.modules.reports import service
-from app.modules.reports.schemas import OwnReport, ReportInput, ReportUpdate
+from app.modules.reports.schemas import (
+    OwnReport,
+    QuickLogInput,
+    QuickLogResult,
+    ReportInput,
+    ReportUpdate,
+)
 from app.modules.reputation import service as reputation_service
 from app.shared.enums import ReputationEventType
 
@@ -39,6 +45,27 @@ async def create_report(
     )
     await db.commit()
     return OwnReport.model_validate(report)
+
+
+@router.post("/batch", response_model=QuickLogResult, status_code=201)
+async def submit_quick_log(
+    payload: QuickLogInput, db: DbSession, user: ContributingUser
+) -> QuickLogResult:
+    """Up to 30 companies in one go, counted as one submission against the
+    daily limit — the limit is there to slow abuse, not to make someone who
+    applied to thirty companies come back on three different days.
+
+    No reputation is awarded here. The wizard awards it for a complete
+    record at submission; a quick-log line is deliberately thin, and
+    granting standing per line would make thirty lines the cheapest way to
+    rank up. Standing arrives when a moderator verifies the line.
+    """
+    await rate_limit.enforce("report_submit", str(user.id), rate_limit.REPORT_SUBMIT)
+    result = await service.submit_quick_log(
+        db, user_id=user.id, payload=payload, methodology=get_methodology()
+    )
+    await db.commit()
+    return result
 
 
 @router.get("/{report_id}", response_model=OwnReport)

@@ -1,0 +1,251 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-4);
+  padding: var(--gd-space-5);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+}
+
+.h2 {
+  font-size: var(--gd-text-lg);
+  font-weight: 700;
+}
+
+.hint {
+  margin-top: calc(var(--gd-space-3) * -1);
+  font-size: var(--gd-text-xs);
+  color: var(--gd-ink-faint);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.rowHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rowNumber {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-size: var(--gd-text-xs);
+  font-weight: 700;
+  color: var(--gd-ink-muted);
+  background: var(--gd-paper-sunken);
+  border-radius: 50%;
+}
+
+.remove {
+  min-height: 44px;
+  padding: 0 var(--gd-space-3);
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-faint);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.remove:hover {
+  color: var(--gd-ink);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--gd-space-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.label {
+  padding: 0;
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+}
+
+/* Explicit 16px: anything smaller makes iOS zoom the page on focus. */
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: var(--gd-space-3) var(--gd-space-4);
+  font-size: var(--gd-text-base);
+  background: var(--gd-paper);
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius);
+}
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gd-space-2);
+}
+
+.toggle {
+  min-height: 44px;
+  padding: var(--gd-space-2) var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  background: var(--gd-paper);
+  border: 1px solid var(--gd-rule-strong);
+  border-radius: var(--gd-radius-pill);
+  cursor: pointer;
+}
+
+.toggleActive {
+  color: var(--gd-accent);
+  border-color: var(--gd-accent);
+  background: var(--gd-accent-soft);
+}
+
+.error {
+  font-size: var(--gd-text-xs);
+  font-weight: 600;
+  color: var(--gd-extinct);
+}
+
+.addRow {
+  min-height: 48px;
+  font-weight: 600;
+  color: var(--gd-accent);
+  background: transparent;
+  border: 1px dashed var(--gd-rule-strong);
+  border-radius: var(--gd-radius-lg);
+  cursor: pointer;
+}
+
+.addRow:hover {
+  border-color: var(--gd-accent);
+  background: var(--gd-accent-soft);
+}
+
+.primaryButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: var(--gd-space-3) var(--gd-space-6);
+  font-size: var(--gd-text-sm);
+  font-weight: 700;
+  border-radius: var(--gd-radius-pill);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.primaryButton {
+  color: var(--gd-accent-ink);
+  background: var(--gd-accent);
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--gd-accent-hover);
+}
+
+.primaryButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.secondaryButton {
+  color: var(--gd-ink-muted);
+  background: var(--gd-paper);
+  border-color: var(--gd-rule-strong);
+}
+
+.submitError {
+  font-size: var(--gd-text-sm);
+  font-weight: 600;
+  color: var(--gd-extinct);
+}
+
+.signIn {
+  padding: var(--gd-space-4);
+  font-size: var(--gd-text-sm);
+  background: var(--gd-watch-soft);
+  border-radius: var(--gd-radius);
+}
+
+.signInLink {
+  display: inline-block;
+  margin-top: var(--gd-space-2);
+  font-weight: 700;
+  color: var(--gd-accent);
+}
+
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gd-space-4);
+  padding: var(--gd-space-5);
+  background: var(--gd-paper-raised);
+  border: 1px solid var(--gd-rule);
+  border-radius: var(--gd-radius-lg);
+}
+
+.doneTitle {
+  font-size: var(--gd-text-xl);
+  font-weight: 700;
+}
+
+.doneBody {
+  font-size: var(--gd-text-sm);
+  color: var(--gd-ink-muted);
+}
+
+.resultList {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--gd-rule);
+}
+
+.resultRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--gd-space-2);
+  padding: var(--gd-space-3) 0;
+  font-size: var(--gd-text-sm);
+  border-bottom: 1px solid var(--gd-rule);
+}
+
+/* Neither a success colour nor an alarm: a skipped line is information. */
+.ok {
+  font-weight: 600;
+  color: var(--gd-ink);
+}
+
+.notOk {
+  color: var(--gd-ink-muted);
+}
+
+.doneActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gd-space-3);
+}

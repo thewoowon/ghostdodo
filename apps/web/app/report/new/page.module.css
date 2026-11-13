@@ -21,3 +21,8 @@
   font-size: var(--gd-text-sm);
   max-width: var(--gd-max-width-prose);
 }
+
+.lede a {
+  font-weight: 700;
+  color: var(--gd-accent);
+}

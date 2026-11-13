@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel, Field
@@ -25,6 +25,7 @@ from app.modules.reports.models import RecruitmentExperience
 from app.modules.reports.schemas import PublicReportCard
 from app.modules.verification import service as verification_service
 from app.shared.enums import EvidenceReviewState, ReviewDecision, VerificationStatus
+from app.shared.errors import NotFoundError
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -87,6 +88,7 @@ async def queue(
             "submitted_at": report.submitted_at.isoformat() if report.submitted_at else None,
             "auto_check_flags": report.auto_check_flags,
             "evidence_count": count,
+            "batch_id": str(report.batch_id) if report.batch_id else None,
         }
         for report, count in rows.all()
     ]
@@ -211,3 +213,67 @@ async def decide_company_request(
     return CompanyAddRequestResolved(
         id=record.id, status=record.status, company_slug=company.slug if company else None
     )
+
+
+class BatchDecisionInput(BaseModel):
+    decision: Literal["PARTIALLY_VERIFY", "REJECT"]
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class BatchDecisionResult(BaseModel):
+    decided: int
+    # Lines the auto-checks flagged. A batch approval never covers them;
+    # they stay in the queue for one-by-one review.
+    left_for_review: int
+
+
+@router.post("/report-batches/{batch_id}/decision", response_model=BatchDecisionResult)
+async def decide_batch(
+    batch_id: uuid.UUID,
+    payload: BatchDecisionInput,
+    request: Request,
+    db: DbSession,
+    moderator: Moderator,
+) -> BatchDecisionResult:
+    """One decision across a quick log, in one transaction.
+
+    Approval is partial verification, and only for lines that passed the
+    auto-checks: a quick-log line carries no evidence, so it cannot be fully
+    verified, and a flagged line needs a human to look at it. Each line still
+    goes through `verification_service.decide`, so the review row, audit
+    entry, reputation, and recompute are exactly those of a single decision.
+    """
+    rows = (
+        (
+            await db.execute(
+                select(RecruitmentExperience).where(
+                    RecruitmentExperience.batch_id == batch_id,
+                    RecruitmentExperience.verification_status.in_(REVIEW_QUEUE_STATUSES),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    if not rows:
+        raise NotFoundError("검토할 묶음을 찾을 수 없습니다.")
+
+    if payload.decision == "PARTIALLY_VERIFY":
+        targets = [r for r in rows if r.verification_status is VerificationStatus.AUTO_CHECKED]
+        decision = ReviewDecision.PARTIALLY_VERIFY
+    else:
+        targets = list(rows)
+        decision = ReviewDecision.REJECT
+
+    for report in targets:
+        await verification_service.decide(
+            db,
+            report_id=report.id,
+            reviewer=moderator,
+            decision=decision,
+            reasons=[f"batch:{batch_id}"],
+            note=payload.note,
+            request_id=getattr(request.state, "request_id", None),
+        )
+    await db.commit()
+    return BatchDecisionResult(decided=len(targets), left_for_review=len(rows) - len(targets))

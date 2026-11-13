@@ -4,15 +4,23 @@ from __future__ import annotations
 
 import hashlib
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 
+from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.methodology import CURRENT_METHODOLOGY_VERSION, Methodology
+from app.modules.companies.models import Company
 from app.modules.metrics.qualification import Observation, QualifiedObservation, qualify
 from app.modules.reports.models import RecruitmentExperience, RecruitmentStageEvent
-from app.modules.reports.schemas import ReportInput, ReportUpdate
+from app.modules.reports.schemas import (
+    QuickLogInput,
+    QuickLogItemResult,
+    QuickLogResult,
+    ReportInput,
+    ReportUpdate,
+)
 from app.shared.enums import (
     USER_EDITABLE_REPORT_STATUSES,
     CommunicationChannel,
@@ -63,6 +71,10 @@ async def create_draft(
         user_id=user_id,
         idempotency_key=idempotency_key,
         verification_status=VerificationStatus.DRAFT,
+        # Initialised, not left to load: a draft submitted in the same
+        # session (the quick log) would otherwise lazy-load an unloaded
+        # collection, which async SQLAlchemy cannot do.
+        stage_events=[],
         **payload.model_dump(),
     )
     session.add(report)
@@ -273,3 +285,119 @@ def _rebuild_stage_events(report: RecruitmentExperience) -> None:
 
     events.sort(key=lambda e: e.occurred_at)
     report.stage_events.extend(events)
+
+
+def _at_midnight(day: date | None) -> datetime | None:
+    # The wizard sends a date as UTC midnight; the quick log matches it so
+    # the two paths cannot disagree about which day something happened.
+    return datetime.combine(day, time.min, tzinfo=UTC) if day else None
+
+
+async def submit_quick_log(
+    session: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+    payload: QuickLogInput,
+    methodology: Methodology,
+    now: datetime | None = None,
+) -> QuickLogResult:
+    """File each line of a quick log as an ordinary report.
+
+    Every line goes through `create_draft` and `submit_report`, so duplicate
+    detection, the per-company limit, and the auto-checks hold exactly as in
+    the wizard. Each line runs in its own savepoint: a duplicate is reported
+    back for that line and the rest still land. All of them share a batch id
+    so the moderator can review the set together.
+    """
+    now = now or datetime.now(UTC)
+    batch_id = uuid.uuid4()
+    defaults = payload.defaults
+    results: list[QuickLogItemResult] = []
+    # Checked up front: an unknown id would otherwise fail its insert on the
+    # foreign key and take the whole batch down with it.
+    known = set(
+        (
+            await session.execute(
+                select(Company.id).where(Company.id.in_({i.company_id for i in payload.items}))
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    for index, item in enumerate(payload.items):
+        if item.company_id not in known:
+            results.append(
+                QuickLogItemResult(
+                    index=index,
+                    company_id=item.company_id,
+                    status="INVALID",
+                    message="회사를 찾을 수 없습니다.",
+                )
+            )
+            continue
+        try:
+            report_input = ReportInput(
+                company_id=item.company_id,
+                role_title=defaults.role_title,
+                role_category=defaults.role_category,
+                employment_type=defaults.employment_type,
+                source=defaults.source,
+                application_date=item.application_date,
+                furthest_stage=item.furthest_stage,
+                last_company_interaction_at=_at_midnight(item.last_company_interaction_on),
+                result_received=item.result_received,
+                result_received_at=_at_midnight(item.result_received_on),
+                outcome=item.outcome,
+            )
+        except PydanticValidationError as error:
+            results.append(
+                QuickLogItemResult(
+                    index=index,
+                    company_id=item.company_id,
+                    status="INVALID",
+                    message=str(error.errors()[0].get("msg", "입력값을 확인해 주세요.")),
+                )
+            )
+            continue
+
+        try:
+            async with session.begin_nested():
+                draft = await create_draft(session, user_id=user_id, payload=report_input)
+                draft.batch_id = batch_id
+                report = await submit_report(
+                    session,
+                    report_id=draft.id,
+                    user_id=user_id,
+                    methodology=methodology,
+                    now=now,
+                )
+        except DuplicateReportError as error:
+            results.append(
+                QuickLogItemResult(
+                    index=index,
+                    company_id=item.company_id,
+                    status="DUPLICATE",
+                    message=error.message,
+                )
+            )
+            continue
+        except ReportLimitError as error:
+            results.append(
+                QuickLogItemResult(
+                    index=index, company_id=item.company_id, status="LIMIT", message=error.message
+                )
+            )
+            continue
+
+        results.append(
+            QuickLogItemResult(
+                index=index, company_id=item.company_id, status="SUBMITTED", report_id=report.id
+            )
+        )
+
+    return QuickLogResult(
+        batch_id=batch_id,
+        submitted=sum(1 for r in results if r.status == "SUBMITTED"),
+        results=results,
+    )

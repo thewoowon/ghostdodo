@@ -8,6 +8,9 @@ export type QueueItem = PublicReportCard & {
   submitted_at: string | null;
   auto_check_flags: Record<string, unknown>;
   evidence_count: number;
+  /** Set when the report came in through the quick log, shared by every
+   *  line filed together. */
+  batch_id: string | null;
 };
 
 export type DisputeItem = {
@@ -154,6 +157,19 @@ export function decideCompanyRequest(
 ) {
   return apiRequest<{ id: string; status: string; company_slug: string | null }>(
     `/admin/company-requests/${requestId}/decision`,
+    { method: "POST", body },
+  );
+}
+
+/** One decision across a quick log. Approval is partial verification and
+ *  covers only the lines that passed the auto-checks; flagged lines stay in
+ *  the queue for one-by-one review. */
+export function decideBatch(
+  batchId: string,
+  body: { decision: "PARTIALLY_VERIFY" | "REJECT"; note?: string },
+) {
+  return apiRequest<{ decided: number; left_for_review: number }>(
+    `/admin/report-batches/${batchId}/decision`,
     { method: "POST", body },
   );
 }

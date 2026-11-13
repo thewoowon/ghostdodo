@@ -106,6 +106,9 @@ class RecruitmentExperience(UUIDPrimaryKey, Timestamped, Base):
     # Duplicate detection: hash of (user, company, stage, application month).
     dedupe_hash: Mapped[str | None] = mapped_column(String(64))
     idempotency_key: Mapped[str | None] = mapped_column(String(80))
+    # Set on every report filed together through the quick log, so a
+    # moderator can review the set as one submission. Null for the wizard.
+    batch_id: Mapped[uuid.UUID | None] = mapped_column()
 
     helpful_count: Mapped[int] = mapped_column(default=0, nullable=False)
 
@@ -136,6 +139,11 @@ class RecruitmentExperience(UUIDPrimaryKey, Timestamped, Base):
         ),
         Index("ix_experiences_user_created", "user_id", "created_at"),
         Index("ix_experiences_dedupe", "dedupe_hash"),
+        Index(
+            "ix_experiences_batch",
+            "batch_id",
+            postgresql_where=text("batch_id IS NOT NULL"),
+        ),
         Index(
             "uq_experiences_user_idempotency",
             "user_id",

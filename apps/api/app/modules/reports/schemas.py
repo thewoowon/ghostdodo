@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -122,3 +123,62 @@ class MyReport(OwnReport):
 
     company_slug: str
     company_name: str
+
+
+# ── Quick log ────────────────────────────────────────────────────────────
+# One applicant has usually applied to dozens of companies. The quick log
+# takes what is shared once and one short line per company, and files each
+# line as an ordinary report through the same draft-and-submit path.
+
+QUICK_LOG_MAX_ITEMS = 30
+
+
+class QuickLogDefaults(BaseModel):
+    role_title: str = Field(min_length=1, max_length=120)
+    role_category: RoleCategory
+    employment_type: EmploymentType
+    source: ApplicationSource
+
+
+class QuickLogItem(BaseModel):
+    company_id: uuid.UUID
+    application_date: date
+    furthest_stage: HiringStage
+    last_company_interaction_on: date | None = None
+    result_received: bool = False
+    result_received_on: date | None = None
+    outcome: Outcome = Outcome.UNKNOWN
+
+    @model_validator(mode="after")
+    def _honest_timing(self) -> QuickLogItem:
+        # Without a last contact date the silence clock starts at the
+        # application. For anyone who got past it — an interview last week
+        # after applying two months ago — that would read as two months of
+        # silence. The wizard asks; the quick log must too.
+        if (
+            self.furthest_stage is not HiringStage.APPLICATION
+            and self.last_company_interaction_on is None
+        ):
+            raise ValueError("지원 이후 단계까지 갔다면 마지막으로 연락받은 날짜가 필요합니다.")
+        if self.result_received and self.result_received_on is None:
+            raise ValueError("결과를 받은 날짜를 입력해 주세요.")
+        return self
+
+
+class QuickLogInput(BaseModel):
+    defaults: QuickLogDefaults
+    items: list[QuickLogItem] = Field(min_length=1, max_length=QUICK_LOG_MAX_ITEMS)
+
+
+class QuickLogItemResult(BaseModel):
+    index: int
+    company_id: uuid.UUID
+    status: Literal["SUBMITTED", "DUPLICATE", "LIMIT", "INVALID"]
+    report_id: uuid.UUID | None = None
+    message: str | None = None
+
+
+class QuickLogResult(BaseModel):
+    batch_id: uuid.UUID
+    submitted: int
+    results: list[QuickLogItemResult]

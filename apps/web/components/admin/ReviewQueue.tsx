@@ -9,6 +9,7 @@ import {
   REVIEW_DECISIONS,
   type QueueItem,
   type ReviewDecision,
+  decideBatch,
   decideReport,
 } from "@/lib/api/admin";
 import { ApiError } from "@/lib/api/client";
@@ -62,6 +63,38 @@ export function ReviewQueue({ initial }: { initial: QueueItem[] }) {
     }
   }
 
+  const [batchConfirm, setBatchConfirm] = useState<string | null>(null);
+
+  // Quick-log lines, grouped so a set filed together can be decided together.
+  const batches = Object.entries(
+    items.reduce<Record<string, QueueItem[]>>((acc, item) => {
+      if (item.batch_id) (acc[item.batch_id] ??= []).push(item);
+      return acc;
+    }, {}),
+  );
+
+  async function applyBatch(batchId: string, decision: "PARTIALLY_VERIFY" | "REJECT") {
+    setBusy(batchId);
+    setError(null);
+    try {
+      await decideBatch(batchId, { decision });
+      // Approval covers only the lines that passed the auto-checks; the
+      // flagged ones are still waiting, so they stay.
+      setItems((current) =>
+        current.filter(
+          (item) =>
+            item.batch_id !== batchId ||
+            (decision === "PARTIALLY_VERIFY" && item.verification_status !== "AUTO_CHECKED"),
+        ),
+      );
+      setBatchConfirm(null);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "결정을 저장하지 못했습니다.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   if (items.length === 0) {
     return (
       <div className={styles.empty}>
@@ -78,6 +111,57 @@ export function ReviewQueue({ initial }: { initial: QueueItem[] }) {
         <p className={styles.error} role="alert">
           {error}
         </p>
+      )}
+
+      {batches.length > 0 && (
+        <ul className={styles.list} aria-label="일괄 기록 묶음">
+          {batches.map(([batchId, lines]) => {
+            const clean = lines.filter((l) => l.verification_status === "AUTO_CHECKED").length;
+            return (
+              <li key={batchId} className={styles.card}>
+                <header className={styles.head}>
+                  <span className={styles.stage}>일괄 기록 묶음</span>
+                  <span className={styles.meta}>
+                    <span className="gd-tabular">{lines.length}</span>건 · 자동 검사 통과{" "}
+                    <span className="gd-tabular">{clean}</span>건
+                  </span>
+                </header>
+                <p className={styles.meta}>
+                  첨부 자료가 없는 기록이라 부분 검증으로만 처리됩니다. 자동 검사에 걸린
+                  기록은 아래에서 하나씩 검토하세요.
+                </p>
+                <div className={styles.actions}>
+                  <button
+                    type="button"
+                    className={styles.action}
+                    disabled={busy === batchId || clean === 0}
+                    onClick={() => applyBatch(batchId, "PARTIALLY_VERIFY")}
+                  >
+                    통과한 {clean}건 부분 검증
+                  </button>
+                  {batchConfirm === batchId ? (
+                    <button
+                      type="button"
+                      className={styles.action}
+                      disabled={busy === batchId}
+                      onClick={() => applyBatch(batchId, "REJECT")}
+                    >
+                      {lines.length}건 모두 반려 확인
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.action}
+                      onClick={() => setBatchConfirm(batchId)}
+                    >
+                      묶음 반려
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       <ul className={styles.list}>
@@ -98,6 +182,7 @@ export function ReviewQueue({ initial }: { initial: QueueItem[] }) {
                 <span className={styles.status}>
                   {VERIFICATION_LABELS[item.verification_status as VerificationStatus]}
                 </span>
+                {item.batch_id && <span className={styles.meta}>일괄 기록</span>}
               </header>
 
               {flags.length > 0 && (
