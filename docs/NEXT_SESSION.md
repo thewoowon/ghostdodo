@@ -1,87 +1,84 @@
 # Next session
 
-Written 2026-09-01, replacing the deployment plan that this session carried
-out. Read `CLAUDE.md` first, then this.
+Written 2026-10-23, after a seven-week gap; production section updated
+2026-11-13. Read `CLAUDE.md` first, then this.
 
 ---
 
-## What just changed
+## What is actually live (checked 2026-11-13)
 
-Deployment exists in the repository. The hostname question that the previous
-note called "the one decision that unblocks the rest" is answered: **one
-public origin**, ghostdodo.com on Vercel, with `/api/v1/*` rewritten to the
-API on Railway. The session cookie therefore needed no change at all, and
-CORS stopped mattering.
+- **ghostdodo.com** is on Vercel DNS. The apex is canonical and www 308s
+  to it.
+- **Vercel** project `lovekong/ghostdodo-web`.
+- **Railway** project `ghostdodo`: the services are `ghostdodo` (API),
+  Postgres, and Redis. The API runs with `APP_ENV=production` and the
+  runbook's variables. DB and Redis are wired by reference
+  (`${{Postgres.DATABASE_URL}}`), mail goes through Resend, and evidence
+  goes to AWS S3 `ghostdodo-evidence` in ap-northeast-2.
+  `/health/ready` reports both checks `ok`, and `/docs` is closed.
 
-Shipped with it:
+How it got here, because each step is easy to repeat:
 
-- `apps/api/Dockerfile` — uv, Python 3.12, two stages, non-root.
-- `apps/api/railway.json` — Dockerfile build, `/health/ready` check, and
-  `alembic upgrade head` as the pre-deploy command, so the schema is in
-  place before the container takes traffic.
-- `apps/web/vercel.json` and the `/api/v1` rewrite in `next.config.ts`.
-- Railway and Vercel deploy from their own GitHub integrations. CI runs
-  tests only and holds no deployment credentials.
-- A real mail provider (`app/core/email.py`, Resend), because
-  `EMAIL_PROVIDER=console` is now refused at boot in production — a logged
-  magic link is a working sign-in.
-- Three production-only correctness fixes found on the way: `client_ip`
-  counts `X-Forwarded-For` from the right, `DATABASE_URL` gets the asyncpg
-  driver it needs, and `check_production_hardening` covers the new ground.
-  All covered by `apps/api/tests/test_deployment.py`.
+- Until 2026-11-13 the API service had **no variables**. It booted in
+  development mode against `localhost`. Later the local `.env` was pasted
+  in, with `APP_ENV=development`, `EMAIL_PROVIDER=console`, and the
+  placeholder `AUTH_SECRET`. The DB was unreachable throughout, so the
+  `dev_token` sign-in bypass was never live. Never wire `DATABASE_URL`
+  without `APP_ENV=production` in the same change.
+- **Migrations never ran.** `apps/api/railway.json` was not being read. The
+  likely cause is that Railway resolves the config file from the repo root,
+  not from the service's Root Directory. With the file ignored, the
+  pre-deploy `alembic upgrade head` and the health check were both inert.
+  Fix: in service Settings, set the config file path to
+  `/apps/api/railway.json`, or set the pre-deploy command directly.
+- **Demo data:** run `python -m app.scripts.seed` once inside the
+  container (`railway ssh`) after the first successful migration.
 
-Verified: `pnpm api:test` (157), `pnpm test` (70), `pnpm api:lint`,
-`pnpm typecheck`, `pnpm lint`, `pnpm build`, plus `docker build` and a
-container smoke test against local Postgres and Redis.
+Still open: `privacy@ghostdodo.com` has no MX, Google sign-in is off, and
+the S3 CORS rule needs `https://ghostdodo.com`. The API service also
+carries leftover web-only variables (`API_ORIGIN`, `NEXT_PUBLIC_*`). The API
+ignores them, but they are misleading.
 
-## What is left of it
+## Local state
 
-Account work only, and it is a step-by-step runbook in
-`docs/DEPLOYMENT.md`: the private S3 bucket, the Resend domain, the two
-projects, the DNS records, the Google OAuth redirect URI, and the CI
-secrets. Nothing in it needs a code change.
+- All checks green: API 158 tests, web 70, ruff/mypy, typecheck, lint, build.
+- Fixed today: stage breakdown came back in JSONB key order (코딩/필기
+  before 지원). `CompanyMetricsOut.from_snapshot` now restores hiring order,
+  with a regression test.
 
-Two things worth doing deliberately once it is up, because they fail
-silently rather than loudly:
+## Operating constraint worth knowing
 
-1. The **rate-limit smoke test** — if `TRUSTED_PROXY_HOPS` is wrong, every
-   page still works and the whole site shares one bucket.
-2. **Postgres backups** on Railway. The append-only ledgers make
-   point-in-time recovery meaningful.
+Only `VERIFIED` and `PARTIALLY_VERIFIED` reports enter aggregates, so every
+report needs a moderator decision before it counts. With one operator,
+moderation throughput *is* data throughput. Any growth push has to plan
+for review time.
 
----
+## Plan agreed in direction (not yet started)
 
-## Then, in order
+The risk is cold start, not code. A company publishes rates only at n≥15
+with ≥30% verified. Engineering that helps, in order:
 
-1. **Saved jobs** — the remaining half of docs/09 Phase 6. Needs a
-   `saved_jobs` table and a migration, mirroring `SavedCompany`.
-2. **Share cards.**
-3. **Community** (Phase 5). `community/` has only `models.py`.
-4. **Application tracker** (Phase 7). `applications/` is an empty directory.
-5. Company claim verification, then `/dex` leaderboards — the latter stays
-   closed until enough companies clear the sample bar, which is a data
-   question, not an engineering one.
+1. Fix production (above), then run the smoke test in `docs/DEPLOYMENT.md`.
+2. **Quick log.** One applicant has typically applied to dozens of
+   companies. Today that means one 8-step wizard per company. A fast
+   multi-company entry is the biggest lever on volume.
+3. **Personal share card.** Shows the applicant's own record: applied N,
+   answered M, silent K. It names no company, so it can be shared before any
+   company crosses the bar, and it carries less legal risk.
+4. **Company share cards** (OG images). Today the company pages carry text
+   OpenGraph only.
+5. **Archive-wide aggregates.** Numbers across the whole archive, with no
+   company named. These are publishable long before any single company is,
+   and they are what press will quote.
+6. `DELETE /me`. Counsel will likely ask for it, and the privacy policy
+   wording changes with it.
 
----
+Deferred until there is traction: saved jobs, community, tracker, claims,
+`/dex` lists.
 
 ## Still not an engineering task
 
-The public launch gate (`docs/handoff/docs/08_TRUST_SAFETY_LEGAL.md` §11) is
-closed except for **Korean legal review of the privacy policy and terms**.
-Deploying did not change that. Until it closes, only the five fictional demo
-companies may exist in production.
-
-Both documents were brought up to the statutory checklist on 2026-09-02 and
-`docs/legal/REVIEW_REQUEST.md` is the package to hand counsel. What comes
-back may create engineering work, and two answers in particular:
-
-- **국외 이전** — if the answer is that account data cannot sit on Railway in
-  the US, hosting changes. Ask this before provisioning anything.
-- **임시조치** — a takedown obligation that pulls against "a company cannot
-  delete a record". Whatever counsel says, do not resolve it by giving
-  companies a delete path.
-
-Also outstanding, and now written into the privacy policy as a manual
-process: **there is no account deletion endpoint.** `deactivated_at` exists
-on the model and nothing sets it. Building `DELETE /me` is a small piece of
-work, and it would let the policy promise a button instead of a mailbox.
+Korean legal review is still the public launch gate. Two related decisions
+are open: who the operator is (individual or registered business), and
+who is named as 개인정보 보호책임자. The policy currently says only
+"고스트도도 운영자".

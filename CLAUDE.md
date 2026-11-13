@@ -197,13 +197,12 @@ reputation ledger, and metric recompute all commit together or none do.
 
 ## Current state
 
-**Deployment is built but not yet run.** The code side is done: an API
-Dockerfile, `railway.json` (Dockerfile build, `/health/ready` check,
-`alembic upgrade head` as the pre-deploy command), `apps/web/vercel.json`,
-and the `/api/v1` rewrite in `next.config.ts`. Railway and Vercel deploy
-from their own GitHub integrations; CI runs tests only.
-What is left is account work — the S3 bucket, the Resend domain, the two
-projects, DNS — and it is written up step by step in `docs/DEPLOYMENT.md`.
+**Deployment is live on the runbook's layout**: Vercel
+(`lovekong/ghostdodo-web`), Railway project `ghostdodo`, and AWS S3 in
+Seoul. As of 2026-11-13, Railway was not reading `apps/api/railway.json`,
+so migrations had never run. See `docs/NEXT_SESSION.md` before touching
+deployment. The runbook is `docs/DEPLOYMENT.md`. Railway and Vercel
+deploy from their own GitHub integrations; CI runs tests only.
 
 The layout is **one origin**: ghostdodo.com on Vercel, `/api/v1/*` rewritten
 to the API on Railway. That is what keeps the session cookie host-only and
