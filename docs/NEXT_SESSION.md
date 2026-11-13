@@ -29,8 +29,11 @@ How it got here, because each step is easy to repeat:
   likely cause is that Railway resolves the config file from the repo root,
   not from the service's Root Directory. With the file ignored, the
   pre-deploy `alembic upgrade head` and the health check were both inert.
-  Fix: in service Settings, set the config file path to
-  `/apps/api/railway.json`, or set the pre-deploy command directly.
+  Setting the config path in the dashboard did not change that.
+  Fixed in `719d21b`: the container command now runs `alembic upgrade
+  head` before uvicorn. That works whatever Railway reads, and it assumes
+  one replica. The first production migration ran 2026-11-13 17:55 KST.
+  Why the config file is ignored is still unexplained.
 - **Demo data:** run `python -m app.scripts.seed` once inside the
   container (`railway ssh`) after the first successful migration.
 
