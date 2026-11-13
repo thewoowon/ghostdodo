@@ -98,19 +98,22 @@ for review time.
 
 ## Next session starts here
 
-1. **Import real companies (decided 2026-11-13).** The publication gate is
-   built (`PUBLISH_REAL_COMPANIES`, off; see CLAUDE.md). Steps:
-   - The gate commit must be live in production *before* any import.
-   - Inputs come from the user: a DART API key (opendart.fss.or.kr), and
-     the 국민연금 가입 사업장 내역 CSV, downloaded from data.go.kr dataset
-     15083277 in a browser. Scripting the portal's internal download API was
-     refused by the permission classifier, so do not retry it.
-   - Run locally with `--dry-run` first and show the user the count and a
-     sample: `import_companies dart --listed-only`, then
-     `import_companies nps <csv> --min-headcount 20`.
-   - Run in production through `railway ssh` with `PYTHONPATH=/app`. The
-     CSV has to reach the container first.
-   - Afterwards, a real company's page must show `공개 준비 중` and `noindex`.
+1. **Real companies are in production (imported 2026-11-13 20:0x KST),
+   held back.** The source was NPS 2026-09: 법인 with 20+ members, active
+   only, with site and programme workplaces folded into their employer.
+   That created 72,300 companies. DART `--update-only` then added official
+   names and tickers to 2,359 of them. The count is 72,305 including the 5
+   demos, with zero real-company snapshots or reports.
+   Verified live:
+   - search returns `published: false` and count 0
+   - metrics come back `withheld`
+   - report cards are empty
+   - pages show `공개 준비 중` and are `noindex`
+   - demos are unchanged
+   - the sitemap has no company pages
+   To refresh monthly, rerun the same two commands. The import upserts by
+   match key; see `import_companies.py` for the flags. Upload files with
+   `ssh … "cat > /tmp/x"` and delete them afterwards.
 2. Evidence upload in production, end to end. CORS is confirmed. What
    remains is a real submission with an attachment, made by the user since
    it needs their inbox. Reject the test report afterwards.

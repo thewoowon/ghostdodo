@@ -254,7 +254,9 @@ On 2026-11-13 the user decided to **import real companies before review,
 publish nothing about them** (see the rule above). In production only the
 five demo companies could be reported on, so not one real record could be
 collected. Imports are identity only: DART listed companies, and 국민연금
-employers with at least 20 members. Demo fixtures (`pnpm api:seed`) stay
+employers with at least 20 members. Production has held 72,300 real
+companies since 2026-11-13, all `published: false`. Demo fixtures
+(`pnpm api:seed`) stay
 flagged `is_demo`, are labelled `샘플 데이터`, and publish either way. Counsel
 has the question as Q8 in `docs/legal/REVIEW_REQUEST.md`.
 
