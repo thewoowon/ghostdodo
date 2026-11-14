@@ -104,8 +104,10 @@ compare its hash with `hash_ip(candidate)`", run with `PYTHONPATH=/app`.
   NPS.
 - **Brand aliases** (aceb780). `sources/brand_aliases.csv` has 46 reviewed
   rows, applied with `import_companies aliases` (try `--dry-run` first).
-  All resolve locally. Applying them to production waits on the user's
-  review of the list.
+  The user reviewed the list, and all 46 were applied in production on
+  2026-11-14 (dry run first, 0 unresolved). To add more, edit the CSV,
+  dry-run, then apply. Re-running is safe because existing aliases count as
+  `already`.
 - **Data gaps seen while building aliases:**
   - 엔씨소프트 and 지에스칼텍스 are not in the directory.
   - Workplace variants still stand alone: `한화에어로스페이스 창원사업장`,
