@@ -13,6 +13,7 @@ import pytest
 from app.db.session import SessionLocal
 from app.modules.companies.directory import (
     DirectoryRecord,
+    add_aliases,
     import_records,
     size_band_from_headcount,
 )
@@ -364,6 +365,46 @@ class TestImport:
         finally:
             await _cleanup(prefix)
 
+    async def test_brand_aliases_make_legal_entities_findable(self, fresh_db: None) -> None:
+        """The directory holds legal names; a brand people actually type
+        must reach the company. A row naming no company is reported, never
+        guessed at, and nothing is created."""
+        prefix = "별칭테스트"
+        try:
+            async with SessionLocal() as session:
+                await import_records(session, [_record(f"주식회사 {prefix}형제들")])
+                stats = await add_aliases(
+                    session,
+                    [
+                        (f"{prefix}배달앱", f"{prefix}형제들"),
+                        (f"{prefix}배달앱", f"{prefix}형제들"),
+                        (f"{prefix}유령", f"{prefix}없는회사"),
+                    ],
+                )
+            assert (stats.added, stats.already) == (1, 1)
+            assert stats.unresolved == [(f"{prefix}유령", f"{prefix}없는회사")]
+
+            async with SessionLocal() as session:
+                found = await search_companies(session, query=f"{prefix}배달앱", limit=5)
+            assert [c.display_name_ko for c in found] == [f"{prefix}형제들"]
+            assert await _count(prefix) == 1
+        finally:
+            await _cleanup(prefix)
+
+    def test_the_bundled_alias_list_is_well_formed(self) -> None:
+        """Every row has an alias, a company, and a reason a reviewer can
+        check; no alias points at two companies."""
+        import csv
+
+        from app.scripts.import_companies import BRAND_ALIASES
+
+        with BRAND_ALIASES.open(encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        assert rows
+        assert all(r["alias"].strip() and r["company"].strip() and r["basis"].strip() for r in rows)
+        aliases = [r["alias"].strip() for r in rows]
+        assert len(aliases) == len(set(aliases))
+
     async def test_slug_collisions_get_a_suffix(self, fresh_db: None) -> None:
         try:
             async with SessionLocal() as session:
@@ -439,3 +480,16 @@ async def _cleanup(name_prefix: str) -> None:
     async with SessionLocal() as session:
         await session.execute(delete(Company).where(Company.legal_name_ko.like(f"%{name_prefix}%")))
         await session.commit()
+
+
+async def _count(name_prefix: str) -> int:
+    async with SessionLocal() as session:
+        return int(
+            (
+                await session.execute(
+                    select(func.count(Company.id)).where(
+                        Company.legal_name_ko.like(f"%{name_prefix}%")
+                    )
+                )
+            ).scalar_one()
+        )

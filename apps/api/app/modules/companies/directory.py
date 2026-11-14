@@ -200,3 +200,42 @@ async def import_records(
     await session.commit()
     log.info("directory.import.done", stats=str(stats))
     return stats
+
+
+@dataclass
+class AliasStats:
+    added: int = 0
+    already: int = 0
+    # Rows whose company could not be found, as (alias, company). Reported,
+    # never guessed at: a brand pointed at the wrong company would send
+    # people's reports there.
+    unresolved: list[tuple[str, str]] = field(default_factory=list)
+
+    def __str__(self) -> str:
+        return f"added={self.added} already={self.already} unresolved={len(self.unresolved)}"
+
+
+async def add_aliases(session: AsyncSession, pairs: list[tuple[str, str]]) -> AliasStats:
+    """Attach brand names to companies that already exist.
+
+    The directory holds legal names, so "배달의민족" never found
+    우아한형제들. Each pair names the company as it is stored and is matched
+    on the same key the import dedupes with. Nothing is created, and demo
+    fixtures are left alone.
+    """
+    stats = AliasStats()
+    for alias, company_name in pairs:
+        key = match_key(company_name)
+        company = (
+            await session.execute(select(Company).where(Company.match_key == key))
+        ).scalar_one_or_none()
+        if company is None or company.is_demo:
+            stats.unresolved.append((alias, company_name))
+            continue
+        if alias in company.aliases:
+            stats.already += 1
+            continue
+        company.aliases = [*company.aliases, alias]
+        stats.added += 1
+    await session.commit()
+    return stats

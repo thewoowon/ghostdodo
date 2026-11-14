@@ -18,13 +18,23 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import csv
 import os
 import sys
 from pathlib import Path
 
+from sqlalchemy import select
+
 from app.core.logging import configure_logging
 from app.db.session import db_session, dispose_engine
-from app.modules.companies.directory import DirectoryRecord, import_records
+from app.modules.companies.directory import (
+    AliasStats,
+    DirectoryRecord,
+    add_aliases,
+    import_records,
+)
+from app.modules.companies.models import Company
+from app.modules.companies.normalize import match_key
 from app.modules.companies.sources import dart, nps
 
 CACHE_DIR = Path(".cache")
@@ -50,6 +60,37 @@ async def _run(records: list[DirectoryRecord], *, dry_run: bool, update_only: bo
     await dispose_engine()
 
 
+BRAND_ALIASES = Path(__file__).parent.parent / "modules/companies/sources/brand_aliases.csv"
+
+
+async def _run_aliases(path: Path, *, dry_run: bool) -> int:
+    with path.open(encoding="utf-8", newline="") as handle:
+        pairs = [(row["alias"].strip(), row["company"].strip()) for row in csv.DictReader(handle)]
+    print(f"parsed {len(pairs)} aliases")
+    async with db_session() as session:
+        if dry_run:
+            # Resolve without writing, so a reviewer sees every miss first.
+            stats = AliasStats()
+            for alias, name in pairs:
+                found = (
+                    await session.execute(
+                        select(Company.is_demo).where(Company.match_key == match_key(name))
+                    )
+                ).first()
+                if found is None or found.is_demo:
+                    stats.unresolved.append((alias, name))
+                else:
+                    stats.added += 1
+            print("--dry-run: nothing written")
+        else:
+            stats = await add_aliases(session, pairs)
+    print(stats)
+    for alias, name in stats.unresolved:
+        print(f"  unresolved: {alias} -> {name}")
+    await dispose_engine()
+    return 0
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true", help="parse but do not write")
@@ -71,6 +112,11 @@ async def main() -> int:
         help="only companies with a 종목코드 — smaller, higher signal",
     )
 
+    alias_parser = sub.add_parser(
+        "aliases", help="brand names for existing companies (reviewed CSV)"
+    )
+    alias_parser.add_argument("file", nargs="?", type=Path, default=BRAND_ALIASES)
+
     nps_parser = sub.add_parser("nps", help="국민연금 가입 사업장 내역 CSV")
     nps_parser.add_argument("file", type=Path)
     nps_parser.add_argument("--encoding", default="cp949")
@@ -88,6 +134,9 @@ async def main() -> int:
 
     args = parser.parse_args()
     configure_logging("INFO", json_output=False)
+
+    if args.source == "aliases":
+        return await _run_aliases(args.file, dry_run=args.dry_run)
 
     if args.source == "dart":
         path = args.file
