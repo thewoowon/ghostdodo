@@ -7,14 +7,14 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import Float, String, cast, func, or_, select
+from sqlalchemy import Float, String, case, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.companies.directory import DirectoryRecord, upsert_record
 from app.modules.companies.models import Company, CompanyAddRequest
 from app.modules.companies.normalize import match_key
 from app.modules.verification.models import AuditLog
-from app.shared.enums import AuditAction
+from app.shared.enums import AuditAction, CompanySizeBand
 from app.shared.errors import CompanyNotFoundError, NotFoundError, ValidationError
 
 # Korean company names are written many ways: `(주)도도랩`, `주식회사 도도랩`,
@@ -36,6 +36,17 @@ _WHITESPACE_RE = re.compile(r"\s+")
 # Below this trigram similarity the results are noise rather than typos.
 _SIMILARITY_FLOOR = 0.2
 
+# Search ranking, not methodology: how far size lifts a company among
+# results that match the query about equally well. Most people apply to
+# large employers, and reports concentrated there reach the sample bar
+# first, so "삼성" should surface 삼성전자 ahead of a ten-person 삼성텍. Small
+# enough that a clearly better name match still wins.
+_SIZE_BOOST = {
+    CompanySizeBand.B1000_PLUS: 0.3,
+    CompanySizeBand.B200_999: 0.2,
+    CompanySizeBand.B50_199: 0.1,
+}
+
 
 def normalize_company_query(raw: str) -> str:
     without_form = _LEGAL_FORM_RE.sub(" ", raw)
@@ -45,9 +56,9 @@ def normalize_company_query(raw: str) -> str:
 async def search_companies(session: AsyncSession, *, query: str, limit: int = 20) -> list[Company]:
     """Typo-tolerant search across Korean name, English name, and aliases.
 
-    Ranking combines exact-prefix (what the user almost always means) with
-    trigram similarity (what they meant to type), then report volume as the
-    tie-breaker.
+    Ranking: an exact name first, then exact-prefix (what the user almost
+    always means), then trigram similarity (what they meant to type) lifted
+    by company size, then report volume as the tie-breaker.
     """
     normalized = normalize_company_query(query)
     if not normalized:
@@ -77,6 +88,12 @@ async def search_companies(session: AsyncSession, *, query: str, limit: int = 20
         False,
     )
 
+    exact_match = func.lower(Company.display_name_ko) == normalized.lower()
+    size_boost = case(
+        *((Company.size_band == band, boost) for band, boost in _SIZE_BOOST.items()),
+        else_=0.0,
+    )
+
     stmt = (
         select(Company)
         .where(
@@ -87,8 +104,9 @@ async def search_companies(session: AsyncSession, *, query: str, limit: int = 20
             )
         )
         .order_by(
+            exact_match.desc(),
             prefix_match.desc(),
-            cast(similarity, Float).desc(),
+            (cast(similarity, Float) + size_boost).desc(),
             Company.public_report_count.desc(),
             Company.display_name_ko.asc(),
         )

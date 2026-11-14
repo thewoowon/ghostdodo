@@ -62,6 +62,9 @@ class ImportStats:
         return f"created={self.created} updated={self.updated} skipped={self.skipped}"
 
 
+_BAND_ORDER = {band: rank for rank, band in enumerate(CompanySizeBand)}
+
+
 def size_band_from_headcount(count: int | None) -> CompanySizeBand:
     """Maps an employee count (NPS subscriber count is a good proxy) onto the
     published band. Bands rather than exact counts: the registry figure is a
@@ -163,7 +166,10 @@ async def upsert_record(
         existing.industry = record.industry
     if record.website:
         existing.website = record.website
-    if record.size_band is not CompanySizeBand.UNKNOWN:
+    # Registries list an employer once per workplace, so the band keeps the
+    # largest any of them reported rather than whichever row came last —
+    # otherwise a branch office could shrink 삼성전자 to 10-49.
+    if _BAND_ORDER[record.size_band] > _BAND_ORDER[existing.size_band]:
         existing.size_band = record.size_band
     existing.directory_source = record.source
     existing.directory_ref = record.source_ref

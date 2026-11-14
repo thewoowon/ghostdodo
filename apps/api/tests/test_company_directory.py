@@ -320,6 +320,50 @@ class TestImport:
         finally:
             await _cleanup(prefix)
 
+    async def test_size_band_keeps_the_largest_workplace(self, fresh_db: None) -> None:
+        """NPS lists an employer once per workplace; a branch office listed
+        last must not shrink the company."""
+        prefix = "규모유지테스트"
+        try:
+            async with SessionLocal() as session:
+                await import_records(
+                    session,
+                    [
+                        _record(prefix, size_band=CompanySizeBand.B1000_PLUS),
+                        _record(prefix, size_band=CompanySizeBand.B10_49),
+                    ],
+                )
+            async with SessionLocal() as session:
+                band = (
+                    await session.execute(
+                        select(Company.size_band).where(Company.legal_name_ko == prefix)
+                    )
+                ).scalar_one()
+            assert band is CompanySizeBand.B1000_PLUS
+        finally:
+            await _cleanup(prefix)
+
+    async def test_search_lifts_larger_companies_among_close_matches(self, fresh_db: None) -> None:
+        """Most people apply to large employers, so "삼성" should surface
+        삼성전자 ahead of a ten-person 삼성텍 — but an exact name still wins."""
+        prefix = "크기순테스트"
+        try:
+            async with SessionLocal() as session:
+                await import_records(
+                    session,
+                    [
+                        _record(f"{prefix}텍", size_band=CompanySizeBand.B10_49),
+                        _record(f"{prefix}전자", size_band=CompanySizeBand.B1000_PLUS),
+                        _record(prefix, size_band=CompanySizeBand.B1_9),
+                    ],
+                )
+            async with SessionLocal() as session:
+                found = await search_companies(session, query=prefix, limit=10)
+            names = [c.display_name_ko for c in found if c.display_name_ko.startswith(prefix)]
+            assert names == [prefix, f"{prefix}전자", f"{prefix}텍"]
+        finally:
+            await _cleanup(prefix)
+
     async def test_slug_collisions_get_a_suffix(self, fresh_db: None) -> None:
         try:
             async with SessionLocal() as session:
