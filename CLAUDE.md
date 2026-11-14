@@ -273,10 +273,15 @@ that fails. The magic link now has a real sender behind it: `EMAIL_PROVIDER`
 picks between `console` (dev) and `resend`, and `app/core/email.py` is the
 only place that knows how a message leaves.
 
-Jobs shipped with `ENABLE_JOBS=true`: `/jobs`, `/jobs/[jobId]`, and
-`/companies/[slug]/jobs`, plus the outbound apply deep link. Demo postings
-are seeded onto the fictional companies with `example.com` URLs, one of them
-already expired so the closed-posting path stays visible.
+Jobs are built (`/jobs`, `/jobs/[jobId]`, `/companies/[slug]/jobs`, and
+the outbound apply deep link) but **closed in production since
+2026-11-14**. Railway has `ENABLE_JOBS=false`, and the web menu entry shows
+only with `NEXT_PUBLIC_ENABLE_JOBS=true` (`lib/features.ts`). The only
+postings were demo fixtures linking to `example.com`, which read as real
+next to real companies. Reopen when there is a lawful source of real
+postings. Never crawl private job boards: in 잡코리아 v. 사람인 (서울고법
+2016나2019365), copying postings was held to infringe the board's
+database right.
 
 Not built yet: saved jobs (the remaining half of docs/09 Phase 6 — it needs a
 `saved_jobs` table and a migration), community, the application tracker,

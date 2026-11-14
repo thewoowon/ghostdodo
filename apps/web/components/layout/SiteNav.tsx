@@ -5,14 +5,19 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { SessionNav, useSession } from "@/components/auth/SessionNav";
+import { jobsEnabled } from "@/lib/features";
 
 import styles from "./SiteNav.module.css";
 
-const LINKS = [
-  { href: "/jobs", label: "채용공고" },
-  { href: "/dex", label: "도감" },
-  { href: "/methodology", label: "측정 기준" },
-] as const;
+type NavLink = { href: "/jobs" | "/dex" | "/methodology"; label: string };
+
+function navLinks(): NavLink[] {
+  return [
+    ...(jobsEnabled() ? [{ href: "/jobs" as const, label: "채용공고" }] : []),
+    { href: "/dex", label: "도감" },
+    { href: "/methodology", label: "측정 기준" },
+  ];
+}
 
 /**
  * Primary navigation.
@@ -26,6 +31,7 @@ const LINKS = [
  * measurement in JS and no flash of the wrong layout on first paint.
  */
 export function SiteNav() {
+  const links = navLinks();
   const session = useSession();
   const pathname = usePathname();
   // The menu remembers the page it was opened on, so navigating — the usual
@@ -52,7 +58,7 @@ export function SiteNav() {
   return (
     <nav className={styles.nav} aria-label="주요 메뉴">
       <div className={styles.inline}>
-        {LINKS.map((link) => (
+        {links.map((link) => (
           <Link key={link.href} href={link.href} className={styles.navLink}>
             {link.label}
           </Link>
@@ -87,7 +93,7 @@ export function SiteNav() {
         }}
       >
         <div className={`gd-shell ${styles.panelBody}`}>
-          {LINKS.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}

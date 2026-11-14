@@ -72,7 +72,25 @@ describe("SiteNav", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(toggle).toHaveAccessibleName("메뉴 닫기");
     expect(p).toBeVisible();
-    expect(within(p).getByRole("link", { name: "채용공고" })).toHaveAttribute("href", "/jobs");
+    expect(within(p).getByRole("link", { name: "측정 기준" })).toHaveAttribute(
+      "href",
+      "/methodology",
+    );
+  });
+
+  it("leaves 채용공고 out while jobs are closed, and shows it once opened", async () => {
+    // Production closed jobs: the only postings were demo fixtures, which
+    // read as real next to real companies.
+    mockSession(null);
+    vi.stubEnv("NEXT_PUBLIC_ENABLE_JOBS", "");
+    const { unmount } = render(<SiteNav />);
+    expect(screen.queryByRole("link", { name: "채용공고" })).not.toBeInTheDocument();
+    unmount();
+
+    vi.stubEnv("NEXT_PUBLIC_ENABLE_JOBS", "true");
+    render(<SiteNav />);
+    expect(screen.getAllByRole("link", { name: "채용공고" })[0]).toHaveAttribute("href", "/jobs");
+    vi.unstubAllEnvs();
   });
 
   it("closes on Escape and hands focus back to the toggle", async () => {

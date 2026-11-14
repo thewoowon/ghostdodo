@@ -153,7 +153,7 @@ services rather than being pasted copies.
 | `S3_BUCKET` | `ghostdodo-evidence` |
 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` | from step 1 |
 | `S3_FORCE_PATH_STYLE` | `false` |
-| `ENABLE_JOBS` | `true` |
+| `ENABLE_JOBS` | `false` (closed since 2026-11-14; see CLAUDE.md) |
 | `PUBLISH_REAL_COMPANIES` | `false` until Korean legal review closes |
 | `RATE_LIMIT_ENABLED` | `true` |
 | `LOG_LEVEL` | `INFO` |
