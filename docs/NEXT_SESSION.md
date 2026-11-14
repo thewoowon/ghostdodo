@@ -96,13 +96,21 @@ compare its hash with `hash_ip(candidate)`", run with `PYTHONPATH=/app`.
   were demo fixtures. A lawful source would be the 고용24 Open-API (apply
   for a key, then check the redistribution terms). Never crawl private
   boards.
-- **Search lifts large employers** (2d0fcce): exact name first, then
-  similarity plus a size boost. The import now keeps each company's
-  largest workplace band. Production bands were written last-row-wins; a
-  re-run of the NPS import corrects them (updates only).
-- **Gap: brand names do not find legal entities.** 배달의민족 does not
-  find 우아한형제들, 토스 does not find 비바리퍼블리카, and LG does not
-  find 엘지전자. A curated alias list for the top employers is the fix.
+- **Search lifts large employers** (2d0fcce). Exact name first, then
+  similarity plus a size boost. The import keeps the largest workplace band.
+  Production bands were corrected by re-running the NPS import on
+  2026-11-14: 0 created, 78,614 updated, then DART `--update-only` again.
+  Note that NPS overwrites DART's official names, so always run DART after
+  NPS.
+- **Brand aliases** (aceb780). `sources/brand_aliases.csv` has 46 reviewed
+  rows, applied with `import_companies aliases` (try `--dry-run` first).
+  All resolve locally. Applying them to production waits on the user's
+  review of the list.
+- **Data gaps seen while building aliases:**
+  - 엔씨소프트 and 지에스칼텍스 are not in the directory.
+  - Workplace variants still stand alone: `한화에어로스페이스 창원사업장`,
+    `씨제이올리브영 -비정규`. `employer_name()` could fold `…사업장` and
+    `-비정규`, but it needs a dry-run count first.
 
 ## Operating constraint worth knowing
 
