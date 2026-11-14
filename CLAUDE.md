@@ -283,6 +283,11 @@ postings. Never crawl private job boards: in 잡코리아 v. 사람인 (서울�
 2016나2019365), copying postings was held to infringe the board's
 database right.
 
+Applicants can file many companies at once through `/report/quick`. Each
+line becomes an ordinary report sharing a `batch_id`, so a moderator can
+partially verify a batch. They can also request a missing company, which
+the moderator approves at `/admin/companies`.
+
 Not built yet: saved jobs (the remaining half of docs/09 Phase 6 — it needs a
 `saved_jobs` table and a migration), community, the application tracker,
 company claim verification, `/dex` leaderboards (intentionally closed until

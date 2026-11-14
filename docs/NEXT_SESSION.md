@@ -1,7 +1,7 @@
 # Next session
 
-Written 2026-10-23, after a seven-week gap; production section updated
-2026-11-13. Read `CLAUDE.md` first, then this.
+Written 2026-10-23; last updated at the end of the 2026-11-13/14 session.
+Read `CLAUDE.md` first, then this. Start at "Next session starts here".
 
 ---
 
@@ -75,19 +75,21 @@ real address. To recheck after any proxy or hosting change, send that same
 request. The script's whole logic is "select the newest token row and
 compare its hash with `hash_ip(candidate)`", run with `PYTHONPATH=/app`.
 
-## Local state
+## Local state (end of 2026-11-14 session)
 
-- All checks green: web 82 tests, typecheck, lint, build. The API was not
-  touched this session (158 at last run).
-- Mobile pass done 2026-11-13, checked at 360/390/768 on every public page
-  plus `/me`:
-  - Below 760px the header folds into a menu, with 기록하기 kept in the bar.
-  - The stage table fits at phone width, so 응답 소요 was no longer hidden.
-  - The sign-in email field stacks above its button.
-  - `/search` stopped opening a dropdown over its own results.
-- The sign-in page decides the Google button on the server, so it no
-  longer flashes and vanishes.
-- None of this is pushed yet, unless the git log says otherwise.
+- All checks green: API 201 tests, ruff, mypy; web 103 tests, typecheck,
+  lint, build. Everything is pushed and deployed; `git log origin/main`
+  is the record.
+- The local DB mirrors production's directory: about 72k real companies,
+  with brand aliases. Local browser scripts must file reports against
+  **demo** companies only.
+- Shipped in the 2026-11-13/14 session:
+  - The mobile pass: header menu, tables, sign-in.
+  - The client-IP fix, which keeps rate limits per visitor.
+  - The publication gate, and the real-company import behind it.
+  - The company-request queue and the quick log.
+  - Jobs closed.
+  - Size-ranked search, and brand aliases.
 
 ## 2026-11-14
 
@@ -121,35 +123,46 @@ report needs a moderator decision before it counts. With one operator,
 moderation throughput *is* data throughput. Any growth push has to plan
 for review time.
 
+## State of production (2026-11-14)
+
+- **72,305 companies**: 72,300 real and 5 demo. The source was NPS 2026-09
+  (법인, 20+ members, active), with site and programme workplaces folded
+  into the employer. DART `--update-only` added official names and
+  tickers to 2,359 companies, and 46 brand aliases are applied. The
+  monthly refresh is the same commands in this order: NPS, then DART
+  `--update-only`, then `aliases`. NPS overwrites DART's names.
+- **Every real company is held back** (`PUBLISH_REAL_COMPANIES` off) and
+  verified live: no rates, no cards, no counts, `공개 준비 중`, `noindex`.
+  Turning it on is the whole launch, after legal review.
+- **The operator moderates**: `dodo_01cb2592` has MODERATOR. Queues:
+  `/admin/reports` (with quick-log batches), `/admin/disputes`, and
+  `/admin/companies`.
+- **Jobs are closed** (`ENABLE_JOBS=false`; the web flag is off).
+- **Rate limits see the visitor** (`PROXY_SHARED_SECRET` on both sides,
+  `TRUSTED_PROXY_HOPS=1`).
+
 ## Next session starts here
 
-1. **Real companies are in production (imported 2026-11-13 20:0x KST),
-   held back.** The source was NPS 2026-09: 법인 with 20+ members, active
-   only, with site and programme workplaces folded into their employer.
-   That created 72,300 companies. DART `--update-only` then added official
-   names and tickers to 2,359 of them. The count is 72,305 including the 5
-   demos, with zero real-company snapshots or reports.
-   Verified live:
-   - search returns `published: false` and count 0
-   - metrics come back `withheld`
-   - report cards are empty
-   - pages show `공개 준비 중` and are `noindex`
-   - demos are unchanged
-   - the sitemap has no company pages
-   To refresh monthly, rerun the same two commands. The import upserts by
-   match key; see `import_companies.py` for the flags. Upload files with
-   `ssh … "cat > /tmp/x"` and delete them afterwards.
-1a. **Company add requests** (466374a): visitors request from search and
-   the wizard, and moderators decide at `/admin/companies`.
-   The operator's account (`dodo_01cb2592`) was promoted to MODERATOR in
-   production on 2026-11-13, at the user's request. Roles are read per
-   request, so this took effect without signing in again. The
-   `moderator@example.com` fixture remains and cannot sign in.
-2. Evidence upload in production, end to end. CORS is confirmed. What
-   remains is a real submission with an attachment, made by the user since
-   it needs their inbox. Reject the test report afterwards.
-3. Mobile leftovers are closed: job-card and company-page links now have
-   44px touch targets (fe1cc0e).
+**Waiting on the user (not engineering):**
+1. **Evidence upload, end to end.** File a real application through
+   `/report/quick` or `/report/new` with an attachment, then review it in
+   `/admin/reports`. S3 CORS is already confirmed.
+2. **Missing large employers**: 엔씨소프트 and 지에스칼텍스 are not in the
+   NPS data. Add them through the company-request queue.
+3. **Apply for a 고용24 Open-API key** if jobs should reopen; check the
+   redistribution terms before building on it.
+4. **Korean legal review** (see the end of this file), now including Q8 on
+   collecting before publishing.
+
+**Engineering, in order:**
+1. **Fold leftover workplace names into their employer.** Two kinds still
+   stand alone: `한화에어로스페이스 창원사업장`, and `씨제이올리브영 -비정규`
+   (see 2026-11-14 above). Extend `nps.employer_name()` for `…사업장` and
+   `-비정규`. Dry-run the count and samples, then re-import. Duplicates
+   that already exist need a merge step, because a re-import only adds
+   the folded name and never deletes the old row.
+2. **Personal share card** (plan item 3 below).
+3. Then company OG cards, archive-wide aggregates, and `DELETE /me`.
 
 Production access from this machine: the SSH key `aepeul-mac` is
 registered with Railway, and this directory is `railway link`ed to
